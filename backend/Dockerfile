@@ -12,6 +12,10 @@ RUN cargo build --release -p runechat-backend && rm -rf backend/src
 
 COPY backend/src ./backend/src
 COPY backend/migrations ./backend/migrations
+# Integration tests live in backend/tests/. They require a live Postgres and run from
+# the host checkout via `cargo test` against the compose DB — not during this build.
+# Copying them here allows `docker build --target builder && cargo test` in CI later.
+COPY backend/tests ./backend/tests
 RUN touch backend/src/main.rs && cargo build --release -p runechat-backend
 
 FROM alpine:3.23
