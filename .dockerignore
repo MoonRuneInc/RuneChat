@@ -1,0 +1,21 @@
+.git/
+.remember/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Build outputs and dependency caches
+target/
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+build/
+
+# Editor/log noise
+*.log
+.DS_Store
+.idea/
+.vscode/

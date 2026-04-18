@@ -68,7 +68,7 @@ Better decisions come from better information.
 **RuneChat** is a FOSS, security-first chat platform intended to become a real alternative to Discord. MVP is in progress.
 
 - **Root directory:** `/home/mystiatech/projects/cc/moonrune/RuneChat`
-- **Current state:** Plan 1 (scaffolding) complete. Backend compiles with passing tests. Frontend builds. Docker Compose stack defined.
+- **Current state:** Plan 1 scaffold exists and has Rhea fixes applied locally. Final Rhea clearance is pending backend/Docker validation in an environment with Rust/Cargo and Docker available.
 - **Deployment target:** `chat.moonrune.cc`
 
 ## Technology Stack
@@ -76,7 +76,7 @@ Better decisions come from better information.
 | Layer | Technology |
 |---|---|
 | Backend | Rust 1.95 · Axum 0.7 · Tokio 1 · SQLx 0.7 |
-| Frontend | TypeScript · React 18 · Vite 5 |
+| Frontend | TypeScript · React · Vite |
 | Client state | Zustand (installed) |
 | Server state | TanStack Query (installed) |
 | Database | PostgreSQL 16 (Docker) |
@@ -110,10 +110,14 @@ RuneChat/
 ├── docs/
 │   └── superpowers/
 │       ├── plans/
+│       ├── reviews/
 │       └── specs/
+├── nginx/
+│   └── dev.conf
 ├── docker-compose.yml
 ├── .env.example
 ├── Cargo.toml
+├── Cargo.lock
 └── AGENTS.md
 ```
 
@@ -121,8 +125,8 @@ RuneChat/
 
 **Backend:**
 ```bash
-cd backend && cargo test   # 7 tests pass
-cd backend && cargo build  # compiles
+cargo test -p runechat-backend
+cargo build -p runechat-backend
 ```
 
 **Frontend:**
@@ -134,8 +138,8 @@ cd frontend && npm run dev     # dev server
 **Docker (requires Docker Desktop):**
 ```bash
 docker compose up --build -d
-curl http://localhost:3000/health
-curl http://localhost:5173
+curl http://localhost:8080/health
+curl http://localhost:8080
 ```
 
 ## Code Style Guidelines

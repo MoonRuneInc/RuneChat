@@ -48,9 +48,13 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn config_errors_on_missing_required_var() {
+        let _guard = ENV_LOCK.lock().unwrap();
         std::env::remove_var("DATABASE_URL");
         let result = Config::from_env();
         assert!(matches!(result, Err(ConfigError::Missing(ref k, _)) if k == "DATABASE_URL"));
@@ -58,6 +62,7 @@ mod tests {
 
     #[test]
     fn config_uses_defaults_for_optional_vars() {
+        let _guard = ENV_LOCK.lock().unwrap();
         std::env::set_var("DATABASE_URL", "postgres://test");
         std::env::set_var("REDIS_URL", "redis://test");
         std::env::set_var("JWT_SECRET", "secret");
