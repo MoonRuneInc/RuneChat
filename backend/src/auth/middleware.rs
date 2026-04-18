@@ -37,10 +37,25 @@ where
         let claims = tokens::decode_jwt(token, &app_state.config)?;
         let user_id = Uuid::parse_str(&claims.sub).map_err(|_| AppError::Unauthorized)?;
 
+        // Verify current account status from DB — stale JWTs may claim "active"
+        // after a compromise replay detection invalidated the account.
+        let row: (String,) = sqlx::query_as(
+            "SELECT account_status FROM users WHERE id = $1"
+        )
+        .bind(user_id)
+        .fetch_optional(&app_state.db)
+        .await?
+        .ok_or(AppError::Unauthorized)?;
+
+        let account_status = row.0;
+        if account_status == "compromised" {
+            return Err(AppError::Unauthorized);
+        }
+
         Ok(AuthUser {
             user_id,
             username: claims.username,
-            account_status: claims.account_status,
+            account_status,
         })
     }
 }
