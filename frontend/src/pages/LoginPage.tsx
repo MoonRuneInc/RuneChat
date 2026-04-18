@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { authApi } from '../api/client'
 import { useAuthStore } from '../stores/authStore'
 
@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const { setAuth } = useAuthStore()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -18,7 +19,8 @@ export default function LoginPage() {
     try {
       const { access_token, user } = await authApi.login(identifier, password)
       setAuth(user, access_token)
-      navigate('/')
+      const redirect = searchParams.get('redirect')
+      navigate(redirect ?? '/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {

@@ -11,6 +11,7 @@ import MessageInput from '../components/MessageInput'
 import CompromisedBanner from '../components/CompromisedBanner'
 import ServerCreateModal from '../components/ServerCreateModal'
 import InviteModal from '../components/InviteModal'
+import ChannelCreateModal from '../components/ChannelCreateModal'
 
 export default function ChatPage() {
   const { serverId, channelId } = useParams<{ serverId?: string; channelId?: string }>()
@@ -18,7 +19,7 @@ export default function ChatPage() {
   const { user } = useAuthStore()
   const [showCreateServer, setShowCreateServer] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
-  const [_showCreateChannel, setShowCreateChannel] = useState(false)
+  const [showCreateChannel, setShowCreateChannel] = useState(false)
 
   const { data: servers = [] } = useQuery({
     queryKey: ['servers'],
@@ -124,6 +125,9 @@ export default function ChatPage() {
       )}
 
       {showCreateServer && <ServerCreateModal onClose={() => setShowCreateServer(false)} />}
+      {showCreateChannel && serverId && (
+        <ChannelCreateModal serverId={serverId} onClose={() => setShowCreateChannel(false)} />
+      )}
       {showInvite && serverId && (
         <InviteModal serverId={serverId} onClose={() => setShowInvite(false)} />
       )}

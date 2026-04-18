@@ -7,9 +7,20 @@ interface AuthState {
   setAuth: (user: User, token: string) => void
   clearAuth: () => void
   refresh: () => Promise<boolean>
+  bootstrap: () => Promise<boolean>
 }
 
-export const useAuthStore = create<AuthState>((set, _get) => ({
+function decodeJwtPayload(token: string): Partial<User> & { sub?: string } | null {
+  try {
+    const payload = token.split('.')[1]
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(json)
+  } catch {
+    return null
+  }
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   accessToken: null,
 
@@ -20,8 +31,28 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
   refresh: async () => {
     try {
       const { access_token } = await authApi.refresh()
-      // Update only the token, not user (user info stays from current state)
       set((state) => ({ accessToken: access_token, user: state.user }))
+      return true
+    } catch {
+      set({ user: null, accessToken: null })
+      return false
+    }
+  },
+
+  bootstrap: async () => {
+    try {
+      const { access_token } = await authApi.refresh()
+      const payload = decodeJwtPayload(access_token)
+      if (!payload?.sub || !payload.username) {
+        set({ user: null, accessToken: null })
+        return false
+      }
+      const user: User = {
+        id: payload.sub,
+        username: payload.username,
+        account_status: payload.account_status ?? 'active',
+      }
+      set({ user, accessToken: access_token })
       return true
     } catch {
       set({ user: null, accessToken: null })
