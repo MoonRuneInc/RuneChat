@@ -23,3 +23,4 @@ anyhow = "1"
 [dev-dependencies]
 axum-test = "14"
 tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "time", "migrate", "macros"] }
