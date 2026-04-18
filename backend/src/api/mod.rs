@@ -1,6 +1,8 @@
 pub mod auth;
+pub mod channels;
 pub mod health;
 pub mod invites;
+pub mod messages;
 pub mod servers;
 
 use axum::Router;
@@ -11,5 +13,8 @@ pub fn router() -> Router<AppState> {
         .route("/health", axum::routing::get(health::health_check))
         .nest("/api/auth", auth::router())
         .nest("/api/servers", servers::router())
+        .nest("/api/servers/:server_id/channels", channels::router())
+        .nest("/api/channels", channels::channel_router())
+        .nest("/api/channels/:channel_id/messages", messages::router())
         .nest("/api/invite", invites::router())
 }
