@@ -47,6 +47,7 @@ async fn stale_access_token_rejected_after_compromise(pool: PgPool) {
         db: pool.clone(),
         redis,
         config: config.clone(),
+        ws_senders: std::sync::Arc::new(dashmap::DashMap::new()),
     };
 
     // 5. Construct request parts with the now-stale "active" JWT

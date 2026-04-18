@@ -2,6 +2,8 @@ use runechat_backend::{api, config::Config, state::AppState};
 use sqlx::postgres::PgPoolOptions;
 use redis::aio::ConnectionManager;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use std::sync::Arc;
+use dashmap::DashMap;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -26,7 +28,23 @@ async fn main() -> anyhow::Result<()> {
     let redis_client = redis::Client::open(config.redis_url.clone())?;
     let redis = ConnectionManager::new(redis_client).await?;
 
-    let state = AppState { db, redis, config };
+    let state = AppState {
+        db: db.clone(),
+        redis,
+        config: config.clone(),
+        ws_senders: Arc::new(DashMap::new()),
+    };
+
+    // Start Redis broker as a background task
+    let broker_state = state.clone();
+    tokio::spawn(async move {
+        runechat_backend::realtime::broker::run(
+            broker_state.config.redis_url,
+            broker_state.db,
+            broker_state.ws_senders,
+        )
+        .await;
+    });
 
     let app = api::router()
         .with_state(state)
