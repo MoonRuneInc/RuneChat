@@ -76,6 +76,10 @@ struct CreateChannelBody {
     display_name: String,
 }
 
+fn is_unique_violation(e: &sqlx::Error) -> bool {
+    matches!(e, sqlx::Error::Database(db_err) if db_err.constraint().is_some())
+}
+
 async fn create_channel(
     State(state): State<AppState>,
     auth: AuthUser,
@@ -102,26 +106,37 @@ async fn create_channel(
         return Err(AppError::Forbidden);
     }
 
-    // Generate slug and handle collisions
-    let base_slug = generate_slug(&display_name);
-    let slug = resolve_slug_collision(&state, server_id, &base_slug).await?;
-
     #[derive(sqlx::FromRow)]
     struct Row {
         id: Uuid,
         created_at: OffsetDateTime,
     }
 
-    let row = sqlx::query_as::<_, Row>(
-        "INSERT INTO channels (server_id, display_name, slug)
-         VALUES ($1, $2, $3)
-         RETURNING id, created_at",
-    )
-    .bind(server_id)
-    .bind(&display_name)
-    .bind(&slug)
-    .fetch_one(&state.db)
-    .await?;
+    let base_slug = generate_slug(&display_name);
+    let mut slug = resolve_slug_collision(&state, server_id, &base_slug).await?;
+    let mut attempt = 0;
+
+    let row = loop {
+        match sqlx::query_as::<_, Row>(
+            "INSERT INTO channels (server_id, display_name, slug)
+             VALUES ($1, $2, $3)
+             RETURNING id, created_at",
+        )
+        .bind(server_id)
+        .bind(&display_name)
+        .bind(&slug)
+        .fetch_one(&state.db)
+        .await
+        {
+            Ok(row) => break row,
+            Err(ref e) if is_unique_violation(e) && attempt < 100 => {
+                attempt += 1;
+                slug = format!("{base_slug}-{}", attempt + 1);
+                continue;
+            }
+            Err(e) => return Err(e.into()),
+        }
+    };
 
     Ok((
         StatusCode::CREATED,

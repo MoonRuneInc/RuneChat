@@ -52,12 +52,14 @@ async fn create_server(
         return Err(AppError::BadRequest("server name must be 1-100 characters".to_string()));
     }
 
+    let mut tx = state.db.begin().await?;
+
     let server_id: Uuid = sqlx::query_scalar(
         "INSERT INTO servers (name, owner_id) VALUES ($1, $2) RETURNING id",
     )
     .bind(&name)
     .bind(auth.user_id)
-    .fetch_one(&state.db)
+    .fetch_one(&mut *tx)
     .await?;
 
     // Add creator as owner in server_members
@@ -66,8 +68,10 @@ async fn create_server(
     )
     .bind(server_id)
     .bind(auth.user_id)
-    .execute(&state.db)
+    .execute(&mut *tx)
     .await?;
+
+    tx.commit().await?;
 
     Ok((
         StatusCode::CREATED,

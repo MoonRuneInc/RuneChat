@@ -51,7 +51,7 @@ async fn send_message(
     if content.is_empty() {
         return Err(AppError::BadRequest("message content cannot be empty".to_string()));
     }
-    if content.len() > 4000 {
+    if content.chars().count() > 4000 {
         return Err(AppError::BadRequest(
             "message content must be 4000 characters or fewer".to_string(),
         ));
@@ -190,9 +190,10 @@ async fn get_messages(
     let rows = if let Some(before_id) = params.before {
         // Cursor-based pagination: messages before a given message ID
         let before_ts: Option<OffsetDateTime> = sqlx::query_scalar(
-            "SELECT created_at FROM messages WHERE id = $1",
+            "SELECT created_at FROM messages WHERE id = $1 AND channel_id = $2",
         )
         .bind(before_id)
+        .bind(channel_id)
         .fetch_optional(&state.db)
         .await?;
 
