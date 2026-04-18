@@ -1,12 +1,4 @@
-mod api;
-mod auth;
-mod config;
-mod db;
-mod error;
-mod state;
-
-use config::Config;
-use state::AppState;
+use runechat_backend::{api, config::Config, state::AppState};
 use sqlx::postgres::PgPoolOptions;
 use redis::aio::ConnectionManager;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
