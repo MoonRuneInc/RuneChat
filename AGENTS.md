@@ -3,8 +3,6 @@
 
 > This file is intended for AI coding agents. It describes the current state of the project as of the last update.
 
----
-
 ## Agent Personas
 
 ### For Kimi Code CLI
@@ -67,60 +65,98 @@ Better decisions come from better information.
 
 ## Project Overview
 
-**RuneChat** is a FOSS, security-first chat platform and Discord alternative under the MoonRune brand. The production target is `chat.moonrune.cc`.
+**RuneChat** is a FOSS, security-first chat platform intended to become a real alternative to Discord. MVP is in progress.
 
 - **Root directory:** `/home/mystiatech/projects/cc/moonrune/RuneChat`
-- **Current state:** Architecture foundation is approved. Plan 01 for scaffolding exists but is under Rhea QA block until Docker/compose issues are corrected.
-- **Source of truth:** `/mnt/d/Vaults/OfficeVault/02_Projects/RuneChat/`
-- **Working remote:** `origin` -> `ssh://git@giteas.fullmooncyberworks.com:30009/MoonRune/RuneChat.git`
-- **GitHub mirror:** Automatic mirror at `https://github.com/MoonRuneInc/RuneChat.git`; do not treat local GitHub auth as a repo blocker.
+- **Current state:** Plan 1 (scaffolding) complete. Backend compiles with passing tests. Frontend builds. Docker Compose stack defined.
+- **Deployment target:** `chat.moonrune.cc`
 
 ## Technology Stack
 
-- Backend: Rust, Axum, Tokio, SQLx
-- Frontend: TypeScript, React, Vite, Zustand, TanStack Query
-- Database: PostgreSQL
-- Real-time: Redis pub/sub plus WebSocket fanout
-- Deployment: Docker Compose with Nginx/proxy readiness
+| Layer | Technology |
+|---|---|
+| Backend | Rust 1.95 · Axum 0.7 · Tokio 1 · SQLx 0.7 |
+| Frontend | TypeScript · React 18 · Vite 5 |
+| Client state | Zustand (installed) |
+| Server state | TanStack Query (installed) |
+| Database | PostgreSQL 16 (Docker) |
+| Real-time broker | Redis 7 (Docker) |
+| Deployment | Docker Compose |
 
 ## Project Structure
 
 ```
 RuneChat/
+├── backend/
+│   ├── src/
+│   │   ├── api/
+│   │   │   ├── mod.rs
+│   │   │   └── health.rs
+│   │   ├── config.rs
+│   │   ├── error.rs
+│   │   ├── main.rs
+│   │   └── state.rs
+│   ├── migrations/
+│   ├── Cargo.toml
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   └── Dockerfile
 ├── docs/
 │   └── superpowers/
-│       ├── specs/
-│       └── plans/
-├── .gitignore
-├── AGENTS.md
-├── CLAUDE.md
-└── CODEX.md
+│       ├── plans/
+│       └── specs/
+├── docker-compose.yml
+├── .env.example
+├── Cargo.toml
+└── AGENTS.md
 ```
 
 ## Build & Test Commands
 
-- Not yet applicable. The application has not been scaffolded.
-- Plan 01 must be corrected before Maya scaffolds.
+**Backend:**
+```bash
+cd backend && cargo test   # 7 tests pass
+cd backend && cargo build  # compiles
+```
+
+**Frontend:**
+```bash
+cd frontend && npm run build   # builds
+cd frontend && npm run dev     # dev server
+```
+
+**Docker (requires Docker Desktop):**
+```bash
+docker compose up --build -d
+curl http://localhost:3000/health
+curl http://localhost:5173
+```
 
 ## Code Style Guidelines
 
-- Follow the approved architecture spec and implementation plans in `docs/superpowers/`.
-- Keep source changes aligned with vault canon.
+- Rust: Standard formatting (`cargo fmt`). Error handling via `AppError` enum with `IntoResponse`.
+- TypeScript: Vite/React defaults. Prefer explicit types over `any`.
 
 ## Testing Strategy
 
-- Rhea must validate repo status and Maya's engineering work before completion.
-- Each implementation plan should include task-level verification and final smoke tests.
-- Security-sensitive work needs explicit negative tests or red-team checks where practical.
+- Backend: Unit tests alongside modules (config, error, API handlers). Integration tests deferred to Plan 2+.
+- Frontend: No tests yet — add when feature complexity warrants.
 
 ## Security Considerations
 
-- Never commit `.env` or secrets.
-- Auth/session, invite, channel slug, membership, and WebSocket changes are QA-sensitive and may be blocked for review.
+- `.env` is gitignored. `.env.example` documents all required variables.
+- JWT secret and TOTP encryption key must be generated per-deployment.
+- See `07_QA_Repo_Readiness.md` in vault for Rhea's callouts (case-insensitive usernames, refresh token replay, invite race conditions, etc.).
 
 ## Notes for Future Agents
 
-1. Read the OfficeVault startup files and RuneChat canon before work.
-2. Treat the vault as authoritative if local docs disagree.
-3. Do not execute blocked plans until Rhea records clearance in the vault.
-4. Keep this file up-to-date as the project evolves; stale documentation misleads agents more than no documentation.
+1. Before proposing architecture changes, check the vault canon at `/mnt/d/Vaults/OfficeVault/02_Projects/RuneChat/`.
+2. All implementation plans live in `docs/superpowers/plans/`.
+3. Heed Rhea's QA callouts — they are requirements, not suggestions.
+4. Commit atomically and push to Gitea (`origin`).
