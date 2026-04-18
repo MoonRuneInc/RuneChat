@@ -49,17 +49,15 @@ Important product direction:
 
 ## Current Repo State
 
-As of 2026-04-17, this repository has not been scaffolded into an application yet. There is no finalized tech stack, build system, test suite, or runtime.
+As of 2026-04-17, this repository has an approved architecture foundation but has not been scaffolded into an application yet. There is no build system, test suite, or runtime.
 
-Before implementation begins, confirm or locate decisions for:
-- tech stack
-- auth approach
-- real-time messaging approach
-- database/data model
-- username rules
-- invite model
-- channel naming rules
-- deployment strategy for `chat.moonrune.cc`
+Finalized Phase 1 direction:
+- Backend: Rust, Axum, Tokio, SQLx
+- Frontend: TypeScript, React, Vite, Zustand, TanStack Query
+- Database: PostgreSQL
+- Real-time: Redis pub/sub plus WebSocket fanout
+- Deployment: Docker Compose with Nginx targeting `chat.moonrune.cc`
+- Auth: short-lived in-memory JWT access tokens plus rotating httpOnly refresh-token cookies
 
 ---
 
