@@ -91,9 +91,10 @@ All tables in PostgreSQL. SQLx migrations manage schema.
 
 ```sql
 -- Core identity
+-- Requires: CREATE EXTENSION IF NOT EXISTS "citext"; in first migration
 users (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  username        TEXT NOT NULL UNIQUE,
+  username        CITEXT NOT NULL UNIQUE,   -- citext provides case-insensitive UNIQUE
   email           TEXT NOT NULL UNIQUE,
   password_hash   TEXT NOT NULL,           -- Argon2id
   account_status  TEXT NOT NULL DEFAULT 'active', -- active | compromised | suspended
@@ -117,8 +118,11 @@ refresh_tokens (
   user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   token_hash      TEXT NOT NULL UNIQUE,   -- Argon2id hash of raw token
   expires_at      TIMESTAMPTZ NOT NULL,
+  revoked_at      TIMESTAMPTZ,            -- null = active; set on use; replay = used token presented again
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 )
+-- Replay detection: if token_hash exists AND revoked_at IS NOT NULL → replay attack
+-- Cleanup: DELETE WHERE revoked_at IS NOT NULL AND expires_at < now() - interval '7 days'
 
 -- Servers
 servers (
