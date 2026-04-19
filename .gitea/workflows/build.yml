@@ -1,0 +1,112 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: short
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runechat-web
+          path: frontend/dist/
+
+  tauri-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - run: npm ci
+        working-directory: ./frontend
+
+      - name: Build Tauri (Windows)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: ./frontend
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runechat-windows
+          path: frontend/src-tauri/target/release/bundle/
+
+  tauri-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install Android NDK
+        run: |
+          sdkmanager "ndk;27.0.11902837" "platforms;android-35" "build-tools;35.0.0"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.0.11902837" >> "$GITHUB_ENV"
+
+      - run: npm ci
+        working-directory: ./frontend
+
+      - name: Build Tauri (Android)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+          NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+        with:
+          projectPath: ./frontend
+          args: --apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runechat-android
+          path: frontend/src-tauri/gen/android/app/build/outputs/apk/

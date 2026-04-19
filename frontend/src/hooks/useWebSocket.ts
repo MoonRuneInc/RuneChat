@@ -1,12 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuthStore } from '../stores/authStore'
+import { makeWsUrl } from '../config'
 
 export type WsStatus = 'connecting' | 'open' | 'closed'
-
-function makeWsUrl(token: string): string {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${protocol}//${window.location.host}/ws?token=${encodeURIComponent(token)}`
-}
 
 export function useWebSocket(onMessage: (data: unknown) => void) {
   const wsRef = useRef<WebSocket | null>(null)

@@ -4,6 +4,7 @@ use redis::aio::ConnectionManager;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use std::sync::Arc;
 use dashmap::DashMap;
+use tower_http::cors::{Any, CorsLayer};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -46,8 +47,20 @@ async fn main() -> anyhow::Result<()> {
         .await;
     });
 
+    let cors = CorsLayer::new()
+        .allow_origin([
+            "http://localhost:5173".parse().unwrap(),   // Vite dev
+            "http://localhost:1420".parse().unwrap(),   // Tauri dev
+            "http://localhost:3000".parse().unwrap(),   // Same-origin dev
+            "https://chat.moonrune.cc".parse().unwrap(), // Production web
+        ])
+        .allow_methods(Any)
+        .allow_headers(Any)
+        .allow_credentials(true);
+
     let app = api::router()
         .with_state(state)
+        .layer(cors)
         .layer(tower_http::trace::TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
