@@ -11,9 +11,17 @@ COPY backend/Cargo.toml ./backend/
 # Cargo resolves the full workspace before building any crate.
 RUN mkdir -p backend/src && echo "fn main(){}" > backend/src/main.rs
 RUN mkdir -p frontend/src-tauri/src && \
-    echo '[package]\nname = "runechat"\nversion = "0.1.0"\nedition = "2021"\n\n[lib]\nname = "runechat_lib"\ncrate-type = ["staticlib", "cdylib", "rlib"]' \
-    > frontend/src-tauri/Cargo.toml && \
-    echo 'pub fn run() {}' > frontend/src-tauri/src/lib.rs
+    cat > frontend/src-tauri/Cargo.toml <<'EOF'
+[package]
+name = "runechat"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "runechat_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+EOF
+RUN echo 'pub fn run() {}' > frontend/src-tauri/src/lib.rs
 RUN cargo build --release -p runechat-backend && rm -rf backend/src
 
 COPY backend/src ./backend/src
