@@ -59,7 +59,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: runechat-windows
-          path: frontend/src-tauri/target/release/bundle/
+          path: target/release/bundle/
 
   tauri-android:
     runs-on: ubuntu-latest
