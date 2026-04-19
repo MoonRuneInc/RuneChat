@@ -2,3 +2,5 @@
 # will have compiled files and executables
 /target/
 /gen/schemas
+TAURI_PRIVATE_KEY
+TAURI_PRIVATE_KEY.pub
