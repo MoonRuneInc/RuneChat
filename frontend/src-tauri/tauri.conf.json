@@ -42,7 +42,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDYwQzRCODlCQzExNzQ2ODMKUldTRFJoZkJtN2pFWUZlUWJxU0VQTUxwTE9oVSt1ei9ySkp1dnY1bFJnUElMRHQvdDJ1ZC9pUEcK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk4QkRFODJBMDQzREFGRTgKUldUb3J6MEVLdWk5bUdWOHhZbzRVOFpVbGFuamwwZi9wVHo2WUxMa3N3a0dOZXZpQU40Z3czY1IK",
       "endpoints": [
         "https://chat.moonrune.cc/updates.json"
       ]
