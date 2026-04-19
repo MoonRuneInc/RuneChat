@@ -46,6 +46,9 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - name: Install NSIS
+        run: choco install nsis
+
       - run: npm ci
         working-directory: ./frontend
 
