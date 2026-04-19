@@ -14,32 +14,42 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: runechat-db:latest
-        env:
-          POSTGRES_USER: runechat
-          POSTGRES_PASSWORD: runechat
-          POSTGRES_DB: runechat
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-      redis:
-        image: redis:8-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
     steps:
       - uses: actions/checkout@v4
+
+      - name: Build DB image
+        run: docker build -t runechat-db:latest -f db/Dockerfile db/
+
+      - name: Start Postgres
+        run: |
+          docker run -d --name postgres \
+            -e POSTGRES_USER=runechat \
+            -e POSTGRES_PASSWORD=runechat \
+            -e POSTGRES_DB=runechat \
+            -p 5432:5432 \
+            --health-cmd "pg_isready -U runechat" \
+            --health-interval 5s \
+            --health-timeout 5s \
+            --health-retries 10 \
+            runechat-db:latest
+          until docker inspect --format='{{.State.Health.Status}}' postgres | grep -q healthy; do
+            echo "Waiting for postgres..."
+            sleep 1
+          done
+
+      - name: Start Redis
+        run: |
+          docker run -d --name redis \
+            -p 6379:6379 \
+            --health-cmd "redis-cli ping" \
+            --health-interval 5s \
+            --health-timeout 5s \
+            --health-retries 10 \
+            redis:8-alpine
+          until docker inspect --format='{{.State.Health.Status}}' redis | grep -q healthy; do
+            echo "Waiting for redis..."
+            sleep 1
+          done
 
       - uses: dtolnay/rust-toolchain@stable
 
