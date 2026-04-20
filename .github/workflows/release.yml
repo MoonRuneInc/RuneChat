@@ -25,10 +25,53 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Rust stable
+        shell: pwsh
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustc --version
+          cargo --version
 
       - name: Install NSIS
-        run: choco install nsis
+        shell: pwsh
+        run: |
+          if (Get-Command makensis -ErrorAction SilentlyContinue) {
+            makensis /VERSION
+            exit 0
+          }
+
+          $installed = $false
+          for ($i = 1; $i -le 3 -and -not $installed; $i++) {
+            Write-Host "Installing NSIS with winget, attempt $i..."
+            winget install --id NSIS.NSIS -e --source winget --disable-interactivity --accept-package-agreements --accept-source-agreements
+            $installed = $LASTEXITCODE -eq 0
+            if (-not $installed) { Start-Sleep -Seconds (10 * $i) }
+          }
+
+          if (-not $installed) {
+            for ($i = 1; $i -le 3 -and -not $installed; $i++) {
+              Write-Host "Installing NSIS with Chocolatey, attempt $i..."
+              choco install nsis --yes --no-progress
+              $installed = $LASTEXITCODE -eq 0
+              if (-not $installed) { Start-Sleep -Seconds (10 * $i) }
+            }
+          }
+
+          $nsisPaths = @(
+            "${env:ProgramFiles}\NSIS",
+            "${env:ProgramFiles(x86)}\NSIS",
+            "C:\ProgramData\chocolatey\lib\nsis\tools"
+          )
+          foreach ($path in $nsisPaths) {
+            if (Test-Path (Join-Path $path "makensis.exe")) {
+              Add-Content $env:GITHUB_PATH $path
+              & (Join-Path $path "makensis.exe") /VERSION
+              exit 0
+            }
+          }
+
+          throw "NSIS installation succeeded but makensis.exe was not found"
 
       - run: npm ci
         working-directory: ./frontend
@@ -57,9 +100,12 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android
+      - name: Install Rust stable with Android target
+        run: |
+          rustup toolchain install stable --profile minimal --target aarch64-linux-android
+          rustup default stable
+          rustc --version
+          cargo --version
 
       - name: Install Linux dependencies
         run: |
