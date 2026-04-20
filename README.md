@@ -1,23 +1,122 @@
 # RuneChat
 
-> A FOSS, security-first community chat platform — a Discord alternative built under the [MoonRune](https://moonrune.cc) brand.
+**A community chat platform that respects you.**
 
-**Target deployment:** `chat.moonrune.cc`
+RuneChat is a free, open-source alternative to Discord — built under the [MoonRune](https://moonrune.cc) brand and designed around transparency, security, and community control from day one.
 
----
-
-## Features
-
-- **Servers & channels** — create servers, invite members, organize conversations into named channels
-- **Real-time messaging** — WebSocket-backed live chat with full message history
-- **Flexible channel names** — spaces, capitalization, readable formatting (slugs handled internally)
-- **Security-first auth** — short-lived JWTs, rotating refresh tokens, replay-attack detection, TOTP 2FA
-- **Compromise protection** — detected account takeovers are locked and visibly flagged to the community
-- **Desktop + web + mobile** — Tauri v2 builds for Windows/macOS/Linux, Android, and a standard web build
+> Deploying at `chat.moonrune.cc`
 
 ---
 
-## Stack
+## What you can do
+
+- **Create a server** and invite your community with a shareable link
+- **Organize conversations** into named channels — with spaces, capitalization, and real formatting, not `#forced-lowercase-slugs`
+- **Chat in real time** with full message history and live delivery
+- **Stay secure** — your session is protected against hijacking and account takeover by default
+- **Take it with you** — native desktop app (Windows, macOS, Linux), Android, and a standard web build, all from the same codebase
+
+---
+
+## Governance
+
+RuneChat gives communities meaningful control over their own spaces. Every server has a clear, transparent role structure — and the platform is designed to grow into full community self-governance over time.
+
+### Server roles
+
+Every server has three roles:
+
+| Role | Who | What they can do |
+|---|---|---|
+| **Owner** | The person who created the server | Full control — manage members, promote admins, configure the server |
+| **Admin** | Members promoted by the owner | Manage members and channels, moderate conversations |
+| **Member** | Everyone else | Read and participate in channels they have access to |
+
+Roles are explicit and visible. There are no hidden permission layers or opaque flags — if you have a role, you know what it means.
+
+### Invite system
+
+Invites are controlled by the server, not by the platform. Owners and admins can:
+- Generate invite links with optional expiry times
+- Set a maximum number of uses per link
+- Revoke links at any time
+
+There is no algorithm deciding who sees your server. Access is invite-only by default.
+
+### Roadmap: community governance
+
+The current role system is the foundation. Future milestones will add:
+
+- **Moderation tooling** — transparent audit logs, member appeals, visible moderation history
+- **Community voting** — structured proposals and votes for server decisions (rule changes, promotions, bans)
+- **Platform governance** — RuneChat itself will adopt transparent governance for roadmap and policy decisions
+
+These features are planned and scoped — not vague aspirations. The architecture is designed so they layer in cleanly without rearchitecting the core.
+
+---
+
+## Security
+
+RuneChat treats your account security as a design requirement, not an afterthought.
+
+- **Sessions expire quickly.** Access tokens live for 15 minutes, in memory only — never written to `localStorage` where a script could steal them.
+- **Session theft is detectable.** Refresh tokens are single-use and rotate on every use. If a stolen token is replayed, RuneChat detects it immediately, kills all active sessions, and locks the account.
+- **Compromised accounts are visible.** If a takeover is detected, a warning badge appears on the username everywhere on the platform — so your community knows your account may not be under your control while you're recovering it.
+- **Recovery requires proof of identity.** Unlocking a compromised account requires TOTP (authenticator app) or email verification — not just a password reset.
+- **2FA secrets are encrypted.** TOTP secrets are encrypted at rest with AES-256-GCM, not just hashed.
+
+---
+
+## Self-hosting
+
+RuneChat runs as a single `docker compose up` and is designed to be self-hosted.
+
+### Requirements
+
+- Docker and Docker Compose
+- A domain and TLS termination (for production)
+- A managed PostgreSQL instance (for production — see below)
+
+### Quick start
+
+```bash
+# 1. Clone the repo and copy the env template
+git clone https://giteas.fullmooncyberworks.com/MoonRune/RuneChat.git
+cd RuneChat
+cp .env.example .env
+
+# 2. Generate secrets (paste results into .env)
+openssl rand -hex 64        # → JWT_SECRET
+openssl rand -base64 32     # → TOTP_ENCRYPTION_KEY
+
+# 3. Start everything
+docker compose up --build
+```
+
+App available at **http://localhost:8080**.
+
+### Environment variables
+
+| Variable | Required | Notes |
+|---|---|---|
+| `JWT_SECRET` | Yes | `openssl rand -hex 64` |
+| `TOTP_ENCRYPTION_KEY` | Yes | `openssl rand -base64 32` |
+| `DATABASE_URL` | Yes | Pre-filled for local compose; use a managed DB for production |
+| `REDIS_URL` | Yes | Pre-filled for local compose |
+| `SMTP_HOST` / `SMTP_*` | No | Required for email OTP account unlock fallback |
+
+See `.env.example` for full documentation.
+
+### Production notes
+
+- The bundled PostgreSQL image (`postgres:16-alpine`) is suitable for local development and internal use. For production, use a managed PostgreSQL service (Neon, Supabase, Railway, or RDS) and set `DATABASE_URL` accordingly.
+- The `nginx/` directory contains a dev reverse proxy config. Replace with your own TLS-terminating config before exposing to the internet.
+
+---
+
+## Contributing
+
+### Tech stack
 
 | Layer | Technology |
 |---|---|
@@ -28,101 +127,37 @@
 | Desktop / Mobile | Tauri v2 |
 | Deployment | Docker Compose · Nginx |
 
----
-
-## Quick Start
+### Development workflow
 
 ```bash
-# 1. Copy and fill in secrets
-cp .env.example .env
-
-# 2. Generate required values
-openssl rand -hex 64          # → JWT_SECRET
-openssl rand -base64 32       # → TOTP_ENCRYPTION_KEY
-
-# 3. Start everything
-docker compose up --build
-```
-
-App available at **http://localhost:8080**.
-
----
-
-## Development
-
-**Full stack (compose):**
-```bash
-docker compose up --build
-```
-
-**Backend only:**
-```bash
+# Backend only (start DB and Redis first)
 docker compose up -d db redis
 cd backend && cargo run
-```
 
-**Backend tests** (requires compose DB):
-```bash
-docker compose up -d db redis
+# Backend tests
 cd backend && cargo test
+
+# Frontend only
+cd frontend && npm install && npm run dev
 ```
 
-**Frontend only:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
----
-
-## Environment
-
-| Variable | Required | How to generate |
-|---|---|---|
-| `JWT_SECRET` | Yes | `openssl rand -hex 64` |
-| `TOTP_ENCRYPTION_KEY` | Yes | `openssl rand -base64 32` |
-| `DATABASE_URL` | Yes | Pre-filled for local compose |
-| `REDIS_URL` | Yes | Pre-filled for local compose |
-| `SMTP_HOST` / `SMTP_*` | No | Required for email OTP account unlock |
-
-See `.env.example` for all variables and comments.
-
----
-
-## API Reference
+### API
 
 | Endpoint | Description |
 |---|---|
 | `POST /api/auth/register` | Create account |
-| `POST /api/auth/login` | Log in, receive JWT + refresh cookie |
-| `POST /api/auth/refresh` | Rotate refresh token, get new JWT |
-| `POST /api/auth/logout` | Revoke refresh token |
-| `POST /api/auth/totp/enroll` | Begin TOTP enrollment |
-| `POST /api/auth/totp/verify-enrollment` | Confirm TOTP setup |
+| `POST /api/auth/login` | Log in |
+| `POST /api/auth/refresh` | Rotate session |
+| `POST /api/auth/logout` | Log out |
+| `POST /api/auth/totp/enroll` | Set up authenticator app |
 | `POST /api/auth/unlock/totp` | Unlock compromised account via TOTP |
-| `POST /api/auth/unlock/email-otp/*` | Unlock via email OTP (no TOTP fallback) |
+| `POST /api/auth/unlock/email-otp/*` | Unlock via email OTP |
 | `GET/POST /api/servers` | List / create servers |
-| `GET/POST /api/servers/:id/invites` | Manage invite links |
-| `POST /api/invites/:code/join` | Join a server via invite |
-| `GET/POST /api/channels` | List / create channels |
+| `GET/POST /api/servers/:id/invites` | Manage invites |
+| `POST /api/invites/:code/join` | Join via invite |
+| `GET/POST /api/channels` | Channels |
 | `GET/POST /api/messages` | Message history / send |
 | `GET /ws` | WebSocket — real-time messaging |
-| `GET /health` | Health check |
-
----
-
-## Security Model
-
-RuneChat is designed with defense in depth. Key properties:
-
-- **Short-lived JWTs** (15 min, in-memory only — never `localStorage`)
-- **Rotating refresh tokens** stored as HMAC-SHA256 hashes, delivered as `httpOnly` + `Secure` + `SameSite=Strict` cookies
-- **Replay detection** — a reused refresh token immediately kills all sessions and marks the account `compromised`
-- **Compromised accounts** — login blocked; visible warning badge shown to other users; messages sent after the compromise timestamp are flagged
-- **Account recovery** — TOTP (primary) or email OTP (fallback when no TOTP enrolled); requires 2FA to reactivate
-- **TOTP secrets** encrypted at rest with AES-256-GCM
-- **WebSocket auth** — JWT-verified at connect; compromised accounts rejected at connection time and excluded from message fan-out
 
 ---
 
