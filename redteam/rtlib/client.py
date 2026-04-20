@@ -26,6 +26,14 @@ class RuneChatClient:
         return self.session.get(f"{self.target}{path}", **kwargs)
 
     def post(self, path: str, **kwargs):
+        if (
+            path == "/api/auth/refresh"
+            and self.target.startswith("http://")
+            and "headers" not in kwargs
+        ):
+            cookie = self.session.cookies.get("refresh_token")
+            if cookie:
+                kwargs["headers"] = {"Cookie": f"refresh_token={cookie}"}
         return self.session.post(f"{self.target}{path}", **kwargs)
 
     def delete(self, path: str, **kwargs):

@@ -39,7 +39,7 @@ def test_ws_origin_validation_blocks_foreign_origin(authed_client):
     try:
         ws = websocket.create_connection(
             f"{ws_url}/ws?token={authed_client.access_token}",
-            header=["Origin: https://evil.com"],
+            origin="https://evil.com",
         )
         ws.close()
         pytest.fail("WebSocket accepted foreign origin")
@@ -54,7 +54,7 @@ def test_ws_valid_origin_allowed(authed_client):
     try:
         ws = websocket.create_connection(
             f"{ws_url}/ws?token={authed_client.access_token}",
-            header=["Origin: http://localhost:5173"],
+            origin="http://localhost:5173",
             timeout=3,
         )
         ws.close()
@@ -80,7 +80,7 @@ def test_ws_compromised_account_rejected(authed_client):
     try:
         ws = websocket.create_connection(
             f"{ws_url}/ws?token={authed_client.access_token}",
-            header=["Origin: http://localhost:5173"],
+            origin="http://localhost:5173",
         )
         ws.close()
         pytest.fail("WebSocket accepted compromised account token")

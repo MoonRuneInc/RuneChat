@@ -4,6 +4,7 @@ Maps to Red Team Testing Plan §12.4: Input & Injection
 """
 
 import pytest
+import uuid
 from rtlib.client import RuneChatClient
 from rtlib import payloads
 
@@ -127,16 +128,19 @@ def test_sqli_in_message_content(authed_client, server_with_channel):
 
 def test_unicode_normalization_in_username(client):
     """Unicode confusable usernames must be normalized or rejected."""
-    # Register a baseline user
+    # Register a unique baseline user so persistent local databases can rerun
+    # the suite without colliding on a static username.
     baseline = RuneChatClient(client.target)
-    baseline.register(username="admin")
+    baseline.register(username=f"admin_{uuid.uuid4().hex[:8]}")
     baseline.cleanup()
 
+    suffix = uuid.uuid4().hex[:8]
     for attack, desc in payloads.UNICODE_ATTACKS:
+        attack_username = f"{attack}_{suffix}"
         c = RuneChatClient(client.target)
         resp = c.session.post(f"{c.target}/api/auth/register", json={
-            "username": attack,
-            "email": f"rt_{hash(attack) & 0xFFFFFFFF}@redteam.local",
+            "username": attack_username,
+            "email": f"rt_{hash(attack_username) & 0xFFFFFFFF}@redteam.local",
             "password": "RedTeamTest123!",
         })
         # The backend validates usernames with `.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-')`
