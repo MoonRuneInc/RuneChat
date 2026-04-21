@@ -1,3 +1,9 @@
 [workspace]
 resolver = "2"
 members = ["backend", "frontend/src-tauri"]
+
+[profile.dev]
+debug = 1
+
+[profile.release]
+codegen-units = 8
