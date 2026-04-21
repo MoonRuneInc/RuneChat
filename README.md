@@ -43,6 +43,26 @@ Invites are controlled by the server, not by the platform. Owners and admins can
 
 There is no algorithm deciding who sees your server. Access is invite-only by default.
 
+### Server succession (deadman protocol)
+
+Servers shouldn't die because an owner's account gets locked.
+
+Every server owner can configure a **succession plan** in server settings:
+
+- **Designated successor** — a trusted admin who takes over management if the owner is locked out
+- **Backup account** — a second account the owner personally controls, which the successor can transfer ownership to during recovery
+- **Recovery hint** — a short question the owner sets in the app. The answer is **never entered into RuneChat** — the owner tells it to their designated successor verbally, in person or over a phone call. When the successor needs to transfer ownership, they ask the backup account holder the question out of band before proceeding.
+
+> "Tell your designated successor the answer in person or over a voice call — never in a message. If someone claims to have recovered your account, your successor can ask them the question to confirm it's really you."
+
+When a succession event is triggered (account compromised or suspended):
+1. The owner is locked from server management actions — they can still read and send messages
+2. The designated successor becomes acting caretaker and can manage the server
+3. The successor can initiate an ownership transfer to the pre-registered backup account once they've verified identity out of band
+4. When the original owner recovers their account, the succession event closes and they regain full control
+
+No community should be held hostage to an account incident.
+
 ### Roadmap: community governance
 
 The current role system is the foundation. Future milestones will add:
