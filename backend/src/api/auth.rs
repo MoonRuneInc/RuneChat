@@ -437,11 +437,10 @@ async fn unlock_totp(
     struct UserRow {
         id: Uuid,
         username: String,
-        account_status: String,
     }
 
     let user = sqlx::query_as::<_, UserRow>(
-        "SELECT id, username::TEXT as username, account_status
+        "SELECT id, username::TEXT as username
          FROM users WHERE (username = $1 OR email = $1) AND account_status = 'compromised'",
     )
     .bind(&body.identifier)

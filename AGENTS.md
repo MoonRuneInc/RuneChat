@@ -177,3 +177,11 @@ curl http://localhost:8080
 3. Heed Rhea's QA callouts — they are requirements, not suggestions.
 4. Commit atomically and push to Gitea (`origin`).
 5. Rhea-authored pushes require Rhea's git identity and a `Signed-off-by: Rhea Solis <rhea@moonrune.cc>` commit trailer.
+
+## Known Build Warnings
+
+- `redis v0.24.0` and `sqlx-postgres v0.7.4` emit future-incompatibility warnings
+  about never-type fallback. These are upstream issues and will become hard errors
+  in Rust 2024 edition. Resolution: upgrade `redis` to ≥0.29 and `sqlx` to ≥0.8
+  when those versions are verified compatible with the codebase. Do not suppress
+  the warnings — they are a legitimate signal that dependency updates are needed.

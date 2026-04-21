@@ -8,7 +8,7 @@ pub async fn health_check() -> (StatusCode, Json<Value>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::{body::Body, http::Request, Router};
+    use axum::Router;
     use axum_test::TestServer;
 
     fn health_router() -> Router {
