@@ -1,8 +1,8 @@
 # RuneChat — TrueNAS SCALE Staging Deployment
 
-> **Plan:** 09 — TrueNAS Staging Deploy  
-> **Target:** `chat.moonrune.cc` via Cloudflare Tunnel  
-> **Postgres:** Neon free tier  
+> **Plan:** 09 — TrueNAS Staging Deploy
+> **Target:** `chat.moonrune.cc` via Cloudflare Tunnel
+> **Postgres:** Neon free tier
 > **Scope:** Team testing and invite-only beta
 
 ---
@@ -12,11 +12,13 @@
 - TrueNAS SCALE 24.04+ (Dragonfish) with Docker available
 - Cloudflare account with `moonrune.cc` under management
 - Neon account
-- This `deploy/` directory copied to the TrueNAS host (or built from source there)
+- This `deploy/` directory copied to the TrueNAS host
 
 ---
 
-## Quick Start (TrueNAS VM)
+## Quick Start (TrueNAS VM, self-contained)
+
+This path uses pre-built images. You only need the files in `deploy/` on the host.
 
 ### 1. Copy deploy artifacts to TrueNAS
 
@@ -27,16 +29,12 @@ ssh root@<truenas-ip>
 cd /root/runechat-deploy
 ```
 
-### 2. Load pre-built images (optional)
-
-If you copied the `.tar` files:
+### 2. Load pre-built images
 
 ```bash
 docker load -i runechat-app.tar
 docker load -i runechat-frontend.tar
 ```
-
-If building on TrueNAS instead, clone the repo and build in place.
 
 ### 3. Provision Neon Database
 
@@ -63,26 +61,48 @@ Required:
 ### 5. Validate compose config
 
 ```bash
-make prod-config
+docker compose --env-file .env.prod -f docker-compose.truenas.yml config
+```
+
+Or, if you prefer Make:
+
+```bash
+make config
 ```
 
 ### 6. Start the stack
 
 ```bash
-# If building on TrueNAS (uses docker-compose.truenas.yml)
-docker compose -f docker-compose.truenas.yml up -d
+docker compose --env-file .env.prod -f docker-compose.truenas.yml up -d
+```
 
-# Or if using pre-built images with Custom App,
-# use docker-compose.truenas-custom-app.yml instead
+Or with Make:
+
+```bash
+make up
 ```
 
 ### 7. Verify locally
 
 ```bash
-curl http://localhost:8080/api/health
+curl http://localhost:8080/health
 ```
 
 Expected: `{"status":"ok"}`
+
+---
+
+## Build from Source on TrueNAS
+
+If you prefer to build the images on TrueNAS rather than loading pre-built `.tar` files:
+
+1. Clone or copy the **entire repo** (not just `deploy/`) to TrueNAS.
+2. Run from the repo root:
+   ```bash
+   docker compose -f deploy/docker-compose.truenas-build.yml up --build -d
+   ```
+
+This compose file uses parent-directory build contexts and bind-mounts `nginx/prod.conf` from the repo tree. It will not work if only `deploy/` is copied.
 
 ---
 
@@ -161,7 +181,7 @@ The `runechat` tunnel should show as **Healthy**.
 
 ```bash
 # Health endpoint
-curl https://chat.moonrune.cc/api/health
+curl https://chat.moonrune.cc/health
 
 # WebSocket (manual browser test recommended)
 # Open https://chat.moonrune.cc in a browser, register, create a server,
@@ -176,7 +196,7 @@ If your TrueNAS SCALE supports Custom Apps with Docker Compose:
 
 1. Build images locally (or on TrueNAS):
    ```bash
-   docker compose -f docker-compose.truenas.yml build
+   docker compose -f docker-compose.truenas-build.yml build
    ```
 
 2. Tag and save:
@@ -200,9 +220,11 @@ If your TrueNAS SCALE supports Custom Apps with Docker Compose:
 
 | File | Purpose |
 |---|---|
-| `docker-compose.truenas.yml` | VM deployment — builds images in place |
+| `docker-compose.truenas.yml` | VM deployment — self-contained, uses pre-built images (needs `--env-file .env.prod`) |
+| `docker-compose.truenas-build.yml` | VM deployment — builds from source (requires full repo) |
 | `docker-compose.truenas-custom-app.yml` | Custom App deployment — uses pre-built images |
 | `cloudflared-config.yml` | Cloudflare Tunnel ingress config |
+| `prod.conf` | nginx production config (copy of `nginx/prod.conf`) |
 | `runechat-app.tar` | Pre-built backend image (exported) |
 | `runechat-frontend.tar` | Pre-built frontend image (exported) |
 
@@ -212,7 +234,7 @@ If your TrueNAS SCALE supports Custom Apps with Docker Compose:
 
 ```bash
 # Stop everything
-docker compose -f docker-compose.truenas.yml down -v
+docker compose --env-file .env.prod -f docker-compose.truenas.yml down -v
 
 # Stop tunnel
 systemctl stop cloudflared
@@ -227,7 +249,7 @@ systemctl stop cloudflared
 - Check `docker compose ps` — all containers should be `healthy`
 - Check Cloudflare dashboard for tunnel errors
 
-### `/api/health` returns 502
+### `/health` returns 502
 - Verify the `app` container is running: `docker compose logs app`
 - Check `DATABASE_URL` is correct and Neon allows connections from the TrueNAS IP
 
@@ -238,5 +260,5 @@ systemctl stop cloudflared
 
 ### Rate limits seem off
 - With Cloudflare Tunnel, nginx sees `X-Forwarded-For` from Cloudflare
-- `nginx/prod.conf` uses the `real_ip` module to set `$remote_addr` correctly
+- `prod.conf` uses the `real_ip` module to set `$remote_addr` correctly
 - Rate limiting keys should reflect actual client IPs
