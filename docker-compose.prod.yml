@@ -9,9 +9,9 @@
 # to it without direct internet exposure. Adjust if the LB runs elsewhere.
 #
 # Required:
-#   cp .env.prod.example .env
+#   cp .env.prod.example .env.prod
 #   # fill in all values
-#   docker compose -f docker-compose.prod.yml up --build -d
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
 
 services:
   redis:
@@ -31,10 +31,13 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     restart: unless-stopped
-    env_file: .env
+    env_file: .env.prod
     environment:
-      # These are overridable via .env; defaults keep services internal.
-      DATABASE_URL: ${DATABASE_URL}
+      # Fail-closed: missing required vars abort compose instead of defaulting.
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY:?TOTP_ENCRYPTION_KEY is required}
+      DOMAIN: ${DOMAIN:?DOMAIN is required}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       RUST_LOG: ${RUST_LOG:-info}
     expose:
