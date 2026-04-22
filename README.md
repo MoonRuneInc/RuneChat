@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🌙 RuneChat
+# 🌙 Cauldron
 
 **A community chat platform that respects you.**
 
@@ -19,9 +19,9 @@
 
 ---
 
-## 💬 What is RuneChat?
+## 💬 What is Cauldron?
 
-RuneChat is a free, open-source alternative to Discord built around three principles: **transparency**, **security**, and **community control**. No dark patterns. No opaque algorithms deciding who sees your server. No account incidents silently locking your community out.
+Cauldron is a free, open-source alternative to Discord built around three principles: **transparency**, **security**, and **community control**. No dark patterns. No opaque algorithms deciding who sees your server. No account incidents silently locking your community out.
 
 ---
 
@@ -58,9 +58,9 @@ Every server owner can configure a **succession plan**:
 |---|---|
 | 👤 **Designated successor** | A trusted admin who takes over management if the owner is locked out |
 | 🔁 **Backup account** | A second account the owner controls — successor can transfer ownership here |
-| 🗝️ **Recovery hint** | A question whose answer is communicated verbally, never stored in RuneChat |
+| 🗝️ **Recovery hint** | A question whose answer is communicated verbally, never stored in Cauldron |
 
-> ⚠️ The answer to the recovery hint is **never entered into RuneChat**. Tell your designated successor in person or over a voice call. If someone claims to have recovered your account, the successor asks them the question out of band before proceeding.
+> ⚠️ The answer to the recovery hint is **never entered into Cauldron**. Tell your designated successor in person or over a voice call. If someone claims to have recovered your account, the successor asks them the question out of band before proceeding.
 
 When a succession event triggers:
 1. 🔐 Owner is locked from server management (can still read and chat)
@@ -74,7 +74,7 @@ No community should be held hostage to an account incident.
 
 ## 🚀 Self-hosting
 
-RuneChat is designed to self-host. One command gets you running.
+Cauldron is designed to self-host. One command gets you running.
 
 ### Requirements
 
@@ -85,8 +85,8 @@ RuneChat is designed to self-host. One command gets you running.
 
 ```bash
 # 1. Clone and configure
-git clone https://giteas.fullmooncyberworks.com/MoonRune/RuneChat.git
-cd RuneChat
+git clone https://giteas.fullmooncyberworks.com/MoonRune/Cauldron.git
+cd Cauldron
 cp .env.example .env
 
 # 2. Generate secrets

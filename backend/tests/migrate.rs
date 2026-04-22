@@ -25,7 +25,7 @@ async fn all_migrations_apply_cleanly(pool: PgPool) {
 async fn username_uniqueness_is_case_insensitive(pool: PgPool) {
     sqlx::query(
         "INSERT INTO users (username, email, password_hash)
-         VALUES ('Alice', 'alice@example.com', 'hash')"
+         VALUES ('Alice', 'alice@example.com', 'hash')",
     )
     .execute(&pool)
     .await
@@ -33,24 +33,30 @@ async fn username_uniqueness_is_case_insensitive(pool: PgPool) {
 
     let result = sqlx::query(
         "INSERT INTO users (username, email, password_hash)
-         VALUES ('alice', 'alice2@example.com', 'hash')"
+         VALUES ('alice', 'alice2@example.com', 'hash')",
     )
     .execute(&pool)
     .await;
 
-    assert!(result.is_err(), "citext UNIQUE must reject case-insensitive duplicate username");
+    assert!(
+        result.is_err(),
+        "citext UNIQUE must reject case-insensitive duplicate username"
+    );
 }
 
 #[sqlx::test(migrations = "./migrations")]
 async fn account_status_check_constraint_rejects_invalid_values(pool: PgPool) {
     let result = sqlx::query(
         "INSERT INTO users (username, email, password_hash, account_status)
-         VALUES ('bob', 'bob@example.com', 'hash', 'hacked')"
+         VALUES ('bob', 'bob@example.com', 'hash', 'hacked')",
     )
     .execute(&pool)
     .await;
 
-    assert!(result.is_err(), "CHECK constraint must reject invalid account_status");
+    assert!(
+        result.is_err(),
+        "CHECK constraint must reject invalid account_status"
+    );
 }
 
 #[sqlx::test(migrations = "./migrations")]
@@ -61,13 +67,15 @@ async fn server_member_role_check_constraint_rejects_invalid_values(pool: PgPool
     .fetch_one(&pool).await.unwrap();
 
     let server_id: (uuid::Uuid,) = sqlx::query_as(
-        "INSERT INTO servers (name, owner_id) VALUES ('Test Server', $1) RETURNING id"
+        "INSERT INTO servers (name, owner_id) VALUES ('Test Server', $1) RETURNING id",
     )
     .bind(user_id.0)
-    .fetch_one(&pool).await.unwrap();
+    .fetch_one(&pool)
+    .await
+    .unwrap();
 
     let result = sqlx::query(
-        "INSERT INTO server_members (server_id, user_id, role) VALUES ($1, $2, 'superuser')"
+        "INSERT INTO server_members (server_id, user_id, role) VALUES ($1, $2, 'superuser')",
     )
     .bind(server_id.0)
     .bind(user_id.0)

@@ -1,5 +1,5 @@
 [package]
-name = "runechat-backend"
+name = "cauldron-backend"
 version = "0.1.0"
 edition = "2021"
 
@@ -34,8 +34,11 @@ unicode-normalization = "0.1"
 dashmap = "5"
 futures-util = "0.3"
 governor = "0.6"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+sha1 = "0.10"
 
 [dev-dependencies]
 axum-test = "14"
 tokio = { version = "1", features = ["full"] }
 sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "time", "migrate", "macros"] }
+wiremock = "0.6"

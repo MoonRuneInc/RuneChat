@@ -1,3 +1,4 @@
+use crate::{auth::middleware::AuthUser, error::AppError, state::AppState};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -6,7 +7,6 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::{auth::middleware::AuthUser, error::AppError, state::AppState};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -49,27 +49,26 @@ async fn create_server(
 ) -> crate::error::Result<(StatusCode, Json<ServerResponse>)> {
     let name = body.name.trim().to_string();
     if name.is_empty() || name.len() > 100 {
-        return Err(AppError::BadRequest("server name must be 1-100 characters".to_string()));
+        return Err(AppError::BadRequest(
+            "server name must be 1-100 characters".to_string(),
+        ));
     }
 
     let mut tx = state.db.begin().await?;
 
-    let server_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO servers (name, owner_id) VALUES ($1, $2) RETURNING id",
-    )
-    .bind(&name)
-    .bind(auth.user_id)
-    .fetch_one(&mut *tx)
-    .await?;
+    let server_id: Uuid =
+        sqlx::query_scalar("INSERT INTO servers (name, owner_id) VALUES ($1, $2) RETURNING id")
+            .bind(&name)
+            .bind(auth.user_id)
+            .fetch_one(&mut *tx)
+            .await?;
 
     // Add creator as owner in server_members
-    sqlx::query(
-        "INSERT INTO server_members (server_id, user_id, role) VALUES ($1, $2, 'owner')",
-    )
-    .bind(server_id)
-    .bind(auth.user_id)
-    .execute(&mut *tx)
-    .await?;
+    sqlx::query("INSERT INTO server_members (server_id, user_id, role) VALUES ($1, $2, 'owner')")
+        .bind(server_id)
+        .bind(auth.user_id)
+        .execute(&mut *tx)
+        .await?;
 
     tx.commit().await?;
 
@@ -175,13 +174,12 @@ async fn delete_server(
     auth: AuthUser,
     Path(server_id): Path<Uuid>,
 ) -> crate::error::Result<StatusCode> {
-    let role: Option<String> = sqlx::query_scalar(
-        "SELECT role FROM server_members WHERE server_id = $1 AND user_id = $2",
-    )
-    .bind(server_id)
-    .bind(auth.user_id)
-    .fetch_optional(&state.db)
-    .await?;
+    let role: Option<String> =
+        sqlx::query_scalar("SELECT role FROM server_members WHERE server_id = $1 AND user_id = $2")
+            .bind(server_id)
+            .bind(auth.user_id)
+            .fetch_optional(&state.db)
+            .await?;
 
     match role.as_deref() {
         Some("owner") => {}
@@ -253,26 +251,24 @@ async fn kick_member(
     auth: AuthUser,
     Path((server_id, target_user_id)): Path<(Uuid, Uuid)>,
 ) -> crate::error::Result<StatusCode> {
-    let requester_role: Option<String> = sqlx::query_scalar(
-        "SELECT role FROM server_members WHERE server_id = $1 AND user_id = $2",
-    )
-    .bind(server_id)
-    .bind(auth.user_id)
-    .fetch_optional(&state.db)
-    .await?;
+    let requester_role: Option<String> =
+        sqlx::query_scalar("SELECT role FROM server_members WHERE server_id = $1 AND user_id = $2")
+            .bind(server_id)
+            .bind(auth.user_id)
+            .fetch_optional(&state.db)
+            .await?;
 
     match requester_role.as_deref() {
         Some("owner") | Some("admin") => {}
         _ => return Err(AppError::Forbidden),
     }
 
-    let target_role: Option<String> = sqlx::query_scalar(
-        "SELECT role FROM server_members WHERE server_id = $1 AND user_id = $2",
-    )
-    .bind(server_id)
-    .bind(target_user_id)
-    .fetch_optional(&state.db)
-    .await?;
+    let target_role: Option<String> =
+        sqlx::query_scalar("SELECT role FROM server_members WHERE server_id = $1 AND user_id = $2")
+            .bind(server_id)
+            .bind(target_user_id)
+            .fetch_optional(&state.db)
+            .await?;
 
     match target_role.as_deref() {
         None => return Err(AppError::NotFound),

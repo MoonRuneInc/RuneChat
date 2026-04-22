@@ -36,7 +36,9 @@ impl Config {
         };
         let get_u64 = |key: &str, default: u64| -> Result<u64, ConfigError> {
             match std::env::var(key) {
-                Ok(v) => v.parse().map_err(|e| ConfigError::Invalid(key.to_string(), e)),
+                Ok(v) => v
+                    .parse()
+                    .map_err(|e| ConfigError::Invalid(key.to_string(), e)),
                 Err(_) => Ok(default),
             }
         };
@@ -47,7 +49,7 @@ impl Config {
             jwt_secret: get("JWT_SECRET")?,
             jwt_expiry_seconds: get_u64("JWT_EXPIRY_SECONDS", 900)?,
             refresh_token_expiry_days: get_u64("REFRESH_TOKEN_EXPIRY_DAYS", 7)?,
-            totp_issuer: std::env::var("TOTP_ISSUER").unwrap_or_else(|_| "RuneChat".to_string()),
+            totp_issuer: std::env::var("TOTP_ISSUER").unwrap_or_else(|_| "Cauldron".to_string()),
             totp_encryption_key: get("TOTP_ENCRYPTION_KEY")?,
             domain: std::env::var("DOMAIN").unwrap_or_else(|_| "chat.moonrune.cc".to_string()),
             smtp: match std::env::var("SMTP_HOST") {
@@ -93,7 +95,7 @@ mod tests {
         let config = Config::from_env().unwrap();
         assert_eq!(config.jwt_expiry_seconds, 900);
         assert_eq!(config.refresh_token_expiry_days, 7);
-        assert_eq!(config.totp_issuer, "RuneChat");
+        assert_eq!(config.totp_issuer, "Cauldron");
         assert_eq!(config.domain, "chat.moonrune.cc");
     }
 }

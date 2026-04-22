@@ -1,13 +1,13 @@
 [package]
-name = "runechat"
+name = "cauldron"
 version = "0.1.0"
-description = "RuneChat — Cross-platform chat client"
+description = "Cauldron — Cross-platform chat client"
 authors = ["MoonRune Inc. <dev@moonrune.cc>"]
 edition = "2021"
 rust-version = "1.77.2"
 
 [lib]
-name = "runechat_lib"
+name = "cauldron_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

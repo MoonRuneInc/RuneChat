@@ -1,3 +1,4 @@
+use crate::{auth::tokens, state::AppState};
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
@@ -10,7 +11,6 @@ use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
 use tokio::sync::mpsc;
 use uuid::Uuid;
-use crate::{auth::tokens, state::AppState};
 
 #[derive(Deserialize)]
 pub struct WsQuery {
@@ -54,19 +54,20 @@ pub async fn ws_handler(
     };
 
     // Rhea fix: check live DB status — don't trust stale JWT claim
-    let db_status: Option<String> = match sqlx::query_scalar(
-        "SELECT account_status FROM users WHERE id = $1"
-    )
-    .bind(user_id)
-    .fetch_optional(&state.db)
-    .await
-    {
-        Ok(s) => s,
-        Err(_) => return (StatusCode::UNAUTHORIZED, "invalid token").into_response(),
-    };
+    let db_status: Option<String> =
+        match sqlx::query_scalar("SELECT account_status FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_optional(&state.db)
+            .await
+        {
+            Ok(s) => s,
+            Err(_) => return (StatusCode::UNAUTHORIZED, "invalid token").into_response(),
+        };
 
     match db_status.as_deref() {
-        Some("compromised") => return (StatusCode::UNAUTHORIZED, "account compromised").into_response(),
+        Some("compromised") => {
+            return (StatusCode::UNAUTHORIZED, "account compromised").into_response()
+        }
         None => return (StatusCode::UNAUTHORIZED, "invalid token").into_response(),
         _ => {}
     }
@@ -100,7 +101,7 @@ async fn handle_socket(socket: WebSocket, state: AppState, user_id: Uuid) {
             match msg {
                 Message::Close(_) => break,
                 Message::Ping(_) => {} // axum handles pong automatically
-                _ => {}               // No client→server messages in MVP
+                _ => {}                // No client→server messages in MVP
             }
         }
     });

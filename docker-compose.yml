@@ -6,13 +6,13 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: runechat
-      POSTGRES_PASSWORD: runechat
-      POSTGRES_DB: runechat
+      POSTGRES_USER: cauldron
+      POSTGRES_PASSWORD: cauldron
+      POSTGRES_DB: cauldron
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U runechat"]
+      test: ["CMD-SHELL", "pg_isready -U cauldron"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -35,7 +35,7 @@ services:
       dockerfile: backend/Dockerfile.dev
     env_file: .env
     environment:
-      DATABASE_URL: postgres://runechat:runechat@db:5432/runechat
+      DATABASE_URL: postgres://cauldron:cauldron@db:5432/cauldron
       REDIS_URL: redis://redis:6379
     expose:
       - "3000"

@@ -1,8 +1,8 @@
-# Cloudflare Tunnel configuration for RuneChat
+# Cloudflare Tunnel configuration for Cauldron
 #
 # Place at ~/.cloudflared/config.yml on the TrueNAS host.
 # Replace <TUNNEL-ID> with the UUID returned by:
-#   cloudflared tunnel create runechat
+#   cloudflared tunnel create cauldron
 
 tunnel: <TUNNEL-ID>
 credentials-file: /root/.cloudflared/<TUNNEL-ID>.json

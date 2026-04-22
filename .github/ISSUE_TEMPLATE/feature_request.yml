@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest a scoped improvement for RuneChat.
+description: Suggest a scoped improvement for Cauldron.
 title: "[Feature]: "
 labels:
   - enhancement
@@ -19,7 +19,7 @@ body:
     id: proposal
     attributes:
       label: Proposed solution
-      description: What should RuneChat do?
+      description: What should Cauldron do?
     validations:
       required: true
   - type: dropdown

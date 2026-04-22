@@ -6,7 +6,7 @@ Maps to Red Team Testing Plan §12.5: Infrastructure
 import os
 import socket
 import pytest
-from rtlib.client import RuneChatClient, DEFAULT_TARGET
+from rtlib.client import CauldronClient, DEFAULT_TARGET
 
 
 # ---------------------------------------------------------------------------
@@ -51,7 +51,7 @@ def test_headers_do_not_expose_server_info(client):
 @pytest.mark.deployment
 def test_redis_not_externally_accessible():
     """Redis port 6379 must not be open on the host."""
-    target = os.environ.get("RUNECHAT_TARGET", DEFAULT_TARGET)
+    target = os.environ.get("CAULDRON_TARGET", DEFAULT_TARGET)
     host = target.replace("http://", "").replace("https://", "").split(":")[0]
     if host in ("localhost", "127.0.0.1"):
         pytest.skip("Localhost testing — Redis exposure check is deployment-specific")
@@ -67,7 +67,7 @@ def test_redis_not_externally_accessible():
 @pytest.mark.deployment
 def test_postgres_not_externally_accessible():
     """PostgreSQL port 5432 must not be open on the host."""
-    target = os.environ.get("RUNECHAT_TARGET", DEFAULT_TARGET)
+    target = os.environ.get("CAULDRON_TARGET", DEFAULT_TARGET)
     host = target.replace("http://", "").replace("https://", "").split(":")[0]
     if host in ("localhost", "127.0.0.1"):
         pytest.skip("Localhost testing — PostgreSQL exposure check is deployment-specific")
@@ -83,7 +83,7 @@ def test_postgres_not_externally_accessible():
 @pytest.mark.deployment
 def test_tls_enforced():
     """Production deployment must redirect HTTP to HTTPS or reject plain HTTP."""
-    target = os.environ.get("RUNECHAT_TARGET", DEFAULT_TARGET)
+    target = os.environ.get("CAULDRON_TARGET", DEFAULT_TARGET)
     if target.startswith("https://"):
         # Already HTTPS — try HTTP version
         http_target = target.replace("https://", "http://")

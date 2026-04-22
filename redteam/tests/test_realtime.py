@@ -5,7 +5,7 @@ Maps to Red Team Testing Plan §12.6: Real-time
 
 import asyncio
 import pytest
-from rtlib.client import RuneChatClient
+from rtlib.client import CauldronClient
 
 
 def test_ws_without_token_rejected(client):
@@ -70,7 +70,7 @@ def test_ws_compromised_account_rejected(authed_client):
     assert old_cookie
     authed_client.refresh()  # rotate
 
-    attacker = RuneChatClient(authed_client.target)
+    attacker = CauldronClient(authed_client.target)
     attacker.session.cookies.set("refresh_token", old_cookie, domain="", path="/api/auth/refresh")
     attacker.post("/api/auth/refresh")  # replay → compromise
 

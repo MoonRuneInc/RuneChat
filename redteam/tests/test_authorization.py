@@ -6,7 +6,7 @@ Maps to Red Team Testing Plan §12.3: Authorization & Access Control
 import uuid
 import concurrent.futures
 import pytest
-from rtlib.client import RuneChatClient
+from rtlib.client import CauldronClient
 
 
 # ---------------------------------------------------------------------------
@@ -146,9 +146,9 @@ def test_invite_race_condition_max_uses(authed_client, victim_client):
     code = inv_resp.json()["code"]
 
     # Create two fresh users who will race to join
-    u1 = RuneChatClient(authed_client.target)
+    u1 = CauldronClient(authed_client.target)
     u1.register()
-    u2 = RuneChatClient(authed_client.target)
+    u2 = CauldronClient(authed_client.target)
     u2.register()
 
     results = []
@@ -202,7 +202,7 @@ def test_join_via_exhausted_invite(authed_client, victim_client):
     assert r1.status_code == 200
 
     # Second join fails
-    u2 = RuneChatClient(authed_client.target)
+    u2 = CauldronClient(authed_client.target)
     u2.register()
     r2 = u2.authed_post(f"/api/invite/{code}/join")
     u2.cleanup()

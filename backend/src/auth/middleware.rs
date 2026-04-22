@@ -1,10 +1,10 @@
+use super::tokens;
+use crate::{error::AppError, state::AppState};
 use axum::{
     extract::{FromRef, FromRequestParts},
     http::request::Parts,
 };
 use uuid::Uuid;
-use crate::{error::AppError, state::AppState};
-use super::tokens;
 
 #[derive(Clone, Debug)]
 pub struct AuthUser {
@@ -39,13 +39,11 @@ where
 
         // Verify current account status from DB — stale JWTs may claim "active"
         // after a compromise replay detection invalidated the account.
-        let row: (String,) = sqlx::query_as(
-            "SELECT account_status FROM users WHERE id = $1"
-        )
-        .bind(user_id)
-        .fetch_optional(&app_state.db)
-        .await?
-        .ok_or(AppError::Unauthorized)?;
+        let row: (String,) = sqlx::query_as("SELECT account_status FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_optional(&app_state.db)
+            .await?
+            .ok_or(AppError::Unauthorized)?;
 
         let account_status = row.0;
         if account_status == "compromised" {

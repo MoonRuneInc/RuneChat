@@ -1,19 +1,25 @@
+use crate::{
+    audit,
+    auth::{middleware::AuthUser, password, tokens, totp},
+    error::AppError,
+    pwned::{self, PwnedCheckResult},
+    state::AppState,
+};
 use axum::{
     extract::{ConnectInfo, State},
     http::{header, HeaderMap, StatusCode},
     routing::post,
     Json, Router,
 };
-use std::net::SocketAddr;
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use serde::{Deserialize, Serialize};
+use std::net::SocketAddr;
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
-use crate::{
-    auth::{middleware::AuthUser, password, tokens, totp},
-    error::AppError,
-    state::AppState,
-};
+
+const LOGIN_FAIL_THRESHOLD: i64 = 15;
+const LOGIN_LOCKOUT_MINUTES: i64 = 15;
+const LOGIN_FAIL_TTL_SECS: u64 = 900; // 15 min window
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -26,10 +32,12 @@ pub fn router() -> Router<AppState> {
         .route("/unlock/totp", post(unlock_totp))
         .route("/unlock/email-otp/send", post(unlock_email_otp_send))
         .route("/unlock/email-otp/verify", post(unlock_email_otp_verify))
-        .layer(tower_http::set_header::SetResponseHeaderLayer::if_not_present(
-            header::CACHE_CONTROL,
-            header::HeaderValue::from_static("no-store"),
-        ))
+        .layer(
+            tower_http::set_header::SetResponseHeaderLayer::if_not_present(
+                header::CACHE_CONTROL,
+                header::HeaderValue::from_static("no-store"),
+            ),
+        )
 }
 
 // --- Shared types ---
@@ -49,9 +57,14 @@ struct AuthResponse {
 
 fn validate_username(username: &str) -> crate::error::Result<()> {
     if username.len() < 2 || username.len() > 32 {
-        return Err(AppError::BadRequest("username must be 2-32 characters".to_string()));
+        return Err(AppError::BadRequest(
+            "username must be 2-32 characters".to_string(),
+        ));
     }
-    if !username.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
+    if !username
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+    {
         return Err(AppError::BadRequest(
             "username may only contain letters, numbers, underscores, and hyphens".to_string(),
         ));
@@ -69,24 +82,24 @@ async fn issue_tokens(
     let jwt = tokens::encode_jwt(user_id, username, account_status, &state.config)?;
     let raw_token = tokens::generate_refresh_token();
     let token_hash = tokens::hash_refresh_token(&raw_token, &state.config.jwt_secret);
-    let expires_at = OffsetDateTime::now_utc()
-        + Duration::days(state.config.refresh_token_expiry_days as i64);
+    let expires_at =
+        OffsetDateTime::now_utc() + Duration::days(state.config.refresh_token_expiry_days as i64);
 
-    sqlx::query(
-        "INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
-    )
-    .bind(user_id)
-    .bind(&token_hash)
-    .bind(expires_at)
-    .execute(&state.db)
-    .await?;
+    sqlx::query("INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)")
+        .bind(user_id)
+        .bind(&token_hash)
+        .bind(expires_at)
+        .execute(&state.db)
+        .await?;
 
     let cookie = Cookie::build(("refresh_token", raw_token))
         .http_only(true)
         .secure(true)
         .same_site(SameSite::Strict)
         .path("/api/auth/refresh")
-        .max_age(Duration::days(state.config.refresh_token_expiry_days as i64))
+        .max_age(Duration::days(
+            state.config.refresh_token_expiry_days as i64,
+        ))
         .build();
 
     Ok((jwt, jar.add(cookie)))
@@ -103,16 +116,42 @@ struct RegisterBody {
 
 async fn register(
     State(state): State<AppState>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
     jar: CookieJar,
     Json(body): Json<RegisterBody>,
 ) -> crate::error::Result<(StatusCode, CookieJar, Json<AuthResponse>)> {
+    let ip = crate::rate_limit::extract_client_ip(&headers, Some(addr));
+    state
+        .rate_limiters
+        .register_ip
+        .check_key(&ip)
+        .map_err(|_| AppError::TooManyRequests)?;
+
     validate_username(&body.username)?;
 
     if !body.email.contains('@') || body.email.len() < 3 {
         return Err(AppError::BadRequest("invalid email address".to_string()));
     }
     if body.password.len() < 8 {
-        return Err(AppError::BadRequest("password must be at least 8 characters".to_string()));
+        return Err(AppError::BadRequest(
+            "password must be at least 8 characters".to_string(),
+        ));
+    }
+
+    match pwned::check_password(&state.http_client, &body.password).await {
+        PwnedCheckResult::Pwned { count } => {
+            return Err(AppError::BadRequest(format!(
+                "This password has appeared in {} known data breach{}. \
+                 Please choose a different password.",
+                count,
+                if count == 1 { "" } else { "es" }
+            )));
+        }
+        PwnedCheckResult::ServiceUnavailable => {
+            return Err(AppError::ServiceUnavailable);
+        }
+        PwnedCheckResult::Clean => {}
     }
 
     let password_hash = password::hash(&body.password)?;
@@ -147,6 +186,8 @@ async fn register(
         AppError::Database(e)
     })?;
 
+    audit::log(&state.db, "register", Some(user.id), None, None).await;
+
     let (jwt, jar) =
         issue_tokens(&state, jar, user.id, &user.username, &user.account_status).await?;
 
@@ -168,7 +209,7 @@ async fn register(
 
 #[derive(Deserialize)]
 struct LoginBody {
-    identifier: String, // username or email
+    identifier: String,
     password: String,
 }
 
@@ -180,9 +221,15 @@ async fn login(
     Json(body): Json<LoginBody>,
 ) -> crate::error::Result<(CookieJar, Json<AuthResponse>)> {
     let ip = crate::rate_limit::extract_client_ip(&headers, Some(addr));
-    state.rate_limiters.login_ip.check_key(&ip)
+    state
+        .rate_limiters
+        .login_ip
+        .check_key(&ip)
         .map_err(|_| AppError::TooManyRequests)?;
-    state.rate_limiters.login_identifier.check_key(&body.identifier.to_lowercase())
+    state
+        .rate_limiters
+        .login_identifier
+        .check_key(&body.identifier.to_lowercase())
         .map_err(|_| AppError::TooManyRequests)?;
 
     #[derive(sqlx::FromRow)]
@@ -191,10 +238,11 @@ async fn login(
         username: String,
         password_hash: String,
         account_status: String,
+        locked_until: Option<OffsetDateTime>,
     }
 
     let user = sqlx::query_as::<_, UserRow>(
-        "SELECT id, username::TEXT as username, password_hash, account_status
+        "SELECT id, username::TEXT as username, password_hash, account_status, locked_until
          FROM users
          WHERE username = $1 OR email = $1
          LIMIT 1",
@@ -204,7 +252,50 @@ async fn login(
     .await?
     .ok_or(AppError::Unauthorized)?;
 
+    if let Some(locked_until) = user.locked_until {
+        if locked_until > OffsetDateTime::now_utc() {
+            return Err(AppError::BadRequest(
+                "account temporarily locked due to too many failed login attempts — try again later".to_string(),
+            ));
+        }
+    }
+
     if !password::verify(&body.password, &user.password_hash)? {
+        let fails_key = format!("login_fails:{}", body.identifier.to_lowercase());
+        let mut redis = state.redis.clone();
+
+        let fails: i64 = redis::cmd("INCR")
+            .arg(&fails_key)
+            .query_async(&mut redis)
+            .await
+            .unwrap_or(0);
+
+        let _ = redis::cmd("EXPIRE")
+            .arg(&fails_key)
+            .arg(LOGIN_FAIL_TTL_SECS)
+            .query_async::<_, ()>(&mut redis)
+            .await;
+
+        if fails >= LOGIN_FAIL_THRESHOLD {
+            let _ = sqlx::query(
+                "UPDATE users SET locked_until = now() + $1 * interval '1 minute' WHERE id = $2",
+            )
+            .bind(LOGIN_LOCKOUT_MINUTES)
+            .bind(user.id)
+            .execute(&state.db)
+            .await;
+
+            audit::log(
+                &state.db,
+                "account_locked",
+                Some(user.id),
+                Some(&ip),
+                Some(serde_json::json!({ "reason": "too many failed login attempts" })),
+            )
+            .await;
+        }
+
+        audit::log(&state.db, "login_failed", Some(user.id), Some(&ip), None).await;
         return Err(AppError::Unauthorized);
     }
 
@@ -213,6 +304,16 @@ async fn login(
             "account is locked — use TOTP or email OTP to unlock".to_string(),
         ));
     }
+
+    // Clear failure counter on successful login
+    let fails_key = format!("login_fails:{}", body.identifier.to_lowercase());
+    let mut redis = state.redis.clone();
+    let _ = redis::cmd("DEL")
+        .arg(&fails_key)
+        .query_async::<_, ()>(&mut redis)
+        .await;
+
+    audit::log(&state.db, "login_success", Some(user.id), Some(&ip), None).await;
 
     let (jwt, jar) =
         issue_tokens(&state, jar, user.id, &user.username, &user.account_status).await?;
@@ -261,9 +362,7 @@ async fn refresh(
     .await?
     .ok_or(AppError::Unauthorized)?;
 
-    // Replay attack: token was already used
     if row.revoked_at.is_some() {
-        // Kill all sessions and mark account compromised
         sqlx::query(
             "UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL",
         )
@@ -279,6 +378,15 @@ async fn refresh(
         .execute(&state.db)
         .await?;
 
+        audit::log(
+            &state.db,
+            "replay_attack_detected",
+            Some(row.user_id),
+            None,
+            None,
+        )
+        .await;
+
         return Err(AppError::Unauthorized);
     }
 
@@ -286,13 +394,11 @@ async fn refresh(
         return Err(AppError::Unauthorized);
     }
 
-    // Rotate: revoke current token
     sqlx::query("UPDATE refresh_tokens SET revoked_at = now() WHERE id = $1")
         .bind(row.id)
         .execute(&state.db)
         .await?;
 
-    // Fetch current user state for new JWT
     #[derive(sqlx::FromRow)]
     struct UserRow {
         username: String,
@@ -305,8 +411,14 @@ async fn refresh(
     .fetch_one(&state.db)
     .await?;
 
-    let (jwt, jar) =
-        issue_tokens(&state, jar, row.user_id, &user.username, &user.account_status).await?;
+    let (jwt, jar) = issue_tokens(
+        &state,
+        jar,
+        row.user_id,
+        &user.username,
+        &user.account_status,
+    )
+    .await?;
 
     Ok((jar, Json(serde_json::json!({ "access_token": jwt }))))
 }
@@ -327,7 +439,6 @@ async fn logout(
             .await?;
     }
 
-    // Clear cookie
     let expired = Cookie::build(("refresh_token", ""))
         .http_only(true)
         .secure(true)
@@ -345,7 +456,6 @@ async fn totp_enroll(
     State(state): State<AppState>,
     auth: AuthUser,
 ) -> crate::error::Result<Json<serde_json::Value>> {
-    // Check if already enrolled
     let existing = sqlx::query_scalar::<_, i64>(
         "SELECT COUNT(*) FROM totp_secrets WHERE user_id = $1 AND verified_at IS NOT NULL",
     )
@@ -357,7 +467,6 @@ async fn totp_enroll(
         return Err(AppError::Conflict("TOTP already enrolled".to_string()));
     }
 
-    // Remove any pending (unverified) enrollment
     sqlx::query("DELETE FROM totp_secrets WHERE user_id = $1 AND verified_at IS NULL")
         .bind(auth.user_id)
         .execute(&state.db)
@@ -367,13 +476,11 @@ async fn totp_enroll(
     let encrypted = totp::encrypt_secret(&secret, &state.config.totp_encryption_key)?;
     let qr = totp::qr_url(&secret, &auth.username, &state.config.totp_issuer)?;
 
-    sqlx::query(
-        "INSERT INTO totp_secrets (user_id, secret_encrypted) VALUES ($1, $2)",
-    )
-    .bind(auth.user_id)
-    .bind(&encrypted)
-    .execute(&state.db)
-    .await?;
+    sqlx::query("INSERT INTO totp_secrets (user_id, secret_encrypted) VALUES ($1, $2)")
+        .bind(auth.user_id)
+        .bind(&encrypted)
+        .execute(&state.db)
+        .await?;
 
     Ok(Json(serde_json::json!({ "qr_url": qr })))
 }
@@ -388,8 +495,12 @@ async fn totp_verify_enrollment(
     auth: AuthUser,
     Json(body): Json<TotpCodeBody>,
 ) -> crate::error::Result<StatusCode> {
-    state.rate_limiters.totp_user.check_key(&auth.user_id)
+    state
+        .rate_limiters
+        .totp_user
+        .check_key(&auth.user_id)
         .map_err(|_| AppError::TooManyRequests)?;
+
     #[derive(sqlx::FromRow)]
     struct SecretRow {
         id: Uuid,
@@ -404,11 +515,18 @@ async fn totp_verify_enrollment(
     .bind(auth.user_id)
     .fetch_optional(&state.db)
     .await?
-    .ok_or(AppError::BadRequest("no pending TOTP enrollment".to_string()))?;
+    .ok_or(AppError::BadRequest(
+        "no pending TOTP enrollment".to_string(),
+    ))?;
 
     let secret = totp::decrypt_secret(&row.secret_encrypted, &state.config.totp_encryption_key)?;
 
-    if !totp::verify_code(&secret, &body.code, &auth.username, &state.config.totp_issuer)? {
+    if !totp::verify_code(
+        &secret,
+        &body.code,
+        &auth.username,
+        &state.config.totp_issuer,
+    )? {
         return Err(AppError::BadRequest("invalid TOTP code".to_string()));
     }
 
@@ -417,6 +535,8 @@ async fn totp_verify_enrollment(
         .execute(&state.db)
         .await?;
 
+    audit::log(&state.db, "totp_enrolled", Some(auth.user_id), None, None).await;
+
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -424,7 +544,7 @@ async fn totp_verify_enrollment(
 
 #[derive(Deserialize)]
 struct UnlockTotpBody {
-    identifier: String, // username or email
+    identifier: String,
     code: String,
 }
 
@@ -446,7 +566,9 @@ async fn unlock_totp(
     .bind(&body.identifier)
     .fetch_optional(&state.db)
     .await?
-    .ok_or(AppError::BadRequest("no compromised account found with that identifier".to_string()))?;
+    .ok_or(AppError::BadRequest(
+        "no compromised account found with that identifier".to_string(),
+    ))?;
 
     #[derive(sqlx::FromRow)]
     struct SecretRow {
@@ -467,17 +589,30 @@ async fn unlock_totp(
 
     let secret = totp::decrypt_secret(&row.secret_encrypted, &state.config.totp_encryption_key)?;
 
-    if !totp::verify_code(&secret, &body.code, &user.username, &state.config.totp_issuer)? {
+    if !totp::verify_code(
+        &secret,
+        &body.code,
+        &user.username,
+        &state.config.totp_issuer,
+    )? {
         return Err(AppError::BadRequest("invalid TOTP code".to_string()));
     }
 
-    // Unlock
     sqlx::query(
         "UPDATE users SET account_status = 'active', compromise_detected_at = NULL WHERE id = $1",
     )
     .bind(user.id)
     .execute(&state.db)
     .await?;
+
+    audit::log(
+        &state.db,
+        "account_unlocked_totp",
+        Some(user.id),
+        None,
+        None,
+    )
+    .await;
 
     let (jwt, jar) = issue_tokens(&state, jar, user.id, &user.username, "active").await?;
 
@@ -518,9 +653,10 @@ async fn unlock_email_otp_send(
     .bind(&body.identifier)
     .fetch_optional(&state.db)
     .await?
-    .ok_or(AppError::BadRequest("no compromised account found".to_string()))?;
+    .ok_or(AppError::BadRequest(
+        "no compromised account found".to_string(),
+    ))?;
 
-    // Don't allow email OTP if TOTP is enrolled — use TOTP instead
     let totp_enrolled = sqlx::query_scalar::<_, i64>(
         "SELECT COUNT(*) FROM totp_secrets WHERE user_id = $1 AND verified_at IS NOT NULL",
     )
@@ -537,7 +673,6 @@ async fn unlock_email_otp_send(
     let otp = crate::auth::email::generate_otp();
     let redis_key = format!("email_otp:{}", user.id);
 
-    // Store in Redis with 5-minute TTL
     let mut redis = state.redis.clone();
     redis::cmd("SET")
         .arg(&redis_key)
@@ -577,7 +712,9 @@ async fn unlock_email_otp_verify(
     .bind(&body.identifier)
     .fetch_optional(&state.db)
     .await?
-    .ok_or(AppError::BadRequest("no compromised account found".to_string()))?;
+    .ok_or(AppError::BadRequest(
+        "no compromised account found".to_string(),
+    ))?;
 
     let redis_key = format!("email_otp:{}", user.id);
     let mut redis = state.redis.clone();
@@ -594,20 +731,27 @@ async fn unlock_email_otp_verify(
         return Err(AppError::BadRequest("invalid OTP code".to_string()));
     }
 
-    // Consume OTP
     redis::cmd("DEL")
         .arg(&redis_key)
         .query_async::<_, ()>(&mut redis)
         .await
         .map_err(|e| AppError::Internal(anyhow::anyhow!("redis del: {e}")))?;
 
-    // Unlock
     sqlx::query(
         "UPDATE users SET account_status = 'active', compromise_detected_at = NULL WHERE id = $1",
     )
     .bind(user.id)
     .execute(&state.db)
     .await?;
+
+    audit::log(
+        &state.db,
+        "account_unlocked_email_otp",
+        Some(user.id),
+        None,
+        None,
+    )
+    .await;
 
     let (jwt, jar) = issue_tokens(&state, jar, user.id, &user.username, "active").await?;
 

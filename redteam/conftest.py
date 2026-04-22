@@ -2,18 +2,18 @@
 
 import os
 import pytest
-from rtlib.client import RuneChatClient, DEFAULT_TARGET
+from rtlib.client import CauldronClient, DEFAULT_TARGET
 
 
 def pytest_report_header(config):
-    target = os.environ.get("RUNECHAT_TARGET", DEFAULT_TARGET)
-    return f"runechat-redteam: target={target}"
+    target = os.environ.get("CAULDRON_TARGET", DEFAULT_TARGET)
+    return f"cauldron-redteam: target={target}"
 
 
 @pytest.fixture
 def client():
     """Unauthenticated client."""
-    c = RuneChatClient()
+    c = CauldronClient()
     yield c
     c.cleanup()
 
@@ -21,7 +21,7 @@ def client():
 @pytest.fixture
 def authed_client():
     """Client logged in as a fresh user."""
-    c = RuneChatClient()
+    c = CauldronClient()
     c.register()
     yield c
     c.cleanup()
@@ -30,7 +30,7 @@ def authed_client():
 @pytest.fixture
 def victim_client():
     """Second authenticated client for cross-user tests."""
-    c = RuneChatClient()
+    c = CauldronClient()
     c.register()
     yield c
     c.cleanup()

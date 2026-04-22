@@ -1,4 +1,4 @@
-# RuneChat — Production Docker Compose
+# Cauldron — Production Docker Compose
 #
 # Deploys the application stack without a local database.
 # PostgreSQL is assumed to be managed externally (RDS, Cloud SQL, etc.).

@@ -1,4 +1,4 @@
-# RuneChat — TrueNAS SCALE Docker Compose (VM deployment, build from source)
+# Cauldron — TrueNAS SCALE Docker Compose (VM deployment, build from source)
 #
 # Requires the FULL repo to be present on TrueNAS (clone or copy the entire
 # project, not just the deploy/ directory) because this file references

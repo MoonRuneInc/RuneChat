@@ -1,4 +1,4 @@
-# RuneChat Release Checklist
+# Cauldron Release Checklist
 
 > For the release watcher assigned before `v0.1.0` and every release thereafter.
 > Do not treat the first release tag as a blind ship — it is a release candidate that
@@ -22,7 +22,7 @@
 ### 1. Cut the tag
 
 ```bash
-git tag -a v0.1.0 -m "RuneChat v0.1.0"
+git tag -a v0.1.0 -m "Cauldron v0.1.0"
 git push origin v0.1.0
 git push github v0.1.0   # if GitHub mirror is manually synced
 ```

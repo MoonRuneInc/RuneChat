@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use aes_gcm::{
     aead::{Aead, AeadCore, KeyInit, OsRng as AesOsRng},
     Aes256Gcm, Nonce,
@@ -5,7 +6,6 @@ use aes_gcm::{
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use rand::RngCore;
 use totp_rs::{Algorithm, TOTP};
-use crate::error::AppError;
 
 pub fn generate_secret() -> Vec<u8> {
     let mut secret = vec![0u8; 20];
@@ -14,7 +14,8 @@ pub fn generate_secret() -> Vec<u8> {
 }
 
 fn cipher(key_b64: &str) -> crate::error::Result<Aes256Gcm> {
-    let key_bytes = B64.decode(key_b64)
+    let key_bytes = B64
+        .decode(key_b64)
         .map_err(|e| AppError::Internal(anyhow::anyhow!("invalid TOTP key encoding: {e}")))?;
     Aes256Gcm::new_from_slice(&key_bytes)
         .map_err(|e| AppError::Internal(anyhow::anyhow!("TOTP key must be 32 bytes: {e}")))
@@ -32,16 +33,19 @@ pub fn encrypt_secret(secret: &[u8], key_b64: &str) -> crate::error::Result<Stri
 }
 
 pub fn decrypt_secret(blob_b64: &str, key_b64: &str) -> crate::error::Result<Vec<u8>> {
-    let combined = B64.decode(blob_b64)
+    let combined = B64
+        .decode(blob_b64)
         .map_err(|e| AppError::Internal(anyhow::anyhow!("decode TOTP blob: {e}")))?;
     if combined.len() < 12 {
         return Err(AppError::Internal(anyhow::anyhow!("TOTP blob too short")));
     }
     let nonce = Nonce::from_slice(&combined[..12]);
     let cipher = cipher(key_b64)?;
-    cipher
-        .decrypt(nonce, &combined[12..])
-        .map_err(|_| AppError::Internal(anyhow::anyhow!("TOTP decrypt failed — wrong key or corrupt blob")))
+    cipher.decrypt(nonce, &combined[12..]).map_err(|_| {
+        AppError::Internal(anyhow::anyhow!(
+            "TOTP decrypt failed — wrong key or corrupt blob"
+        ))
+    })
 }
 
 fn make_totp(secret: &[u8], username: &str, issuer: &str) -> crate::error::Result<TOTP> {
@@ -61,7 +65,12 @@ pub fn qr_url(secret: &[u8], username: &str, issuer: &str) -> crate::error::Resu
     Ok(make_totp(secret, username, issuer)?.get_url())
 }
 
-pub fn verify_code(secret: &[u8], code: &str, username: &str, issuer: &str) -> crate::error::Result<bool> {
+pub fn verify_code(
+    secret: &[u8],
+    code: &str,
+    username: &str,
+    issuer: &str,
+) -> crate::error::Result<bool> {
     Ok(make_totp(secret, username, issuer)?
         .check_current(code)
         .unwrap_or(false))

@@ -1,7 +1,7 @@
+use dashmap::DashMap;
 use futures_util::StreamExt;
 use sqlx::PgPool;
 use std::sync::Arc;
-use dashmap::DashMap;
 use uuid::Uuid;
 
 pub async fn run(
@@ -96,10 +96,7 @@ async fn try_run(
     Ok(())
 }
 
-async fn fetch_channel_members(
-    db: &PgPool,
-    channel_id: Uuid,
-) -> Result<Vec<Uuid>, sqlx::Error> {
+async fn fetch_channel_members(db: &PgPool, channel_id: Uuid) -> Result<Vec<Uuid>, sqlx::Error> {
     sqlx::query_scalar::<_, Uuid>(
         r#"
         SELECT sm.user_id

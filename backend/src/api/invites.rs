@@ -1,15 +1,15 @@
+use crate::{auth::middleware::AuthUser, error::AppError, state::AppState};
 use axum::{
     extract::{ConnectInfo, Path, State},
     http::{HeaderMap, StatusCode},
     routing::{get, post},
     Json, Router,
 };
-use std::net::SocketAddr;
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
+use std::net::SocketAddr;
 use time::OffsetDateTime;
 use uuid::Uuid;
-use crate::{auth::middleware::AuthUser, error::AppError, state::AppState};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -70,13 +70,15 @@ async fn create_invite(
 
     if let Some(max) = body.max_uses {
         if max < 1 {
-            return Err(AppError::BadRequest("max_uses must be at least 1".to_string()));
+            return Err(AppError::BadRequest(
+                "max_uses must be at least 1".to_string(),
+            ));
         }
     }
 
-    let expires_at = body.expires_in_hours.map(|hours| {
-        OffsetDateTime::now_utc() + time::Duration::hours(hours)
-    });
+    let expires_at = body
+        .expires_in_hours
+        .map(|hours| OffsetDateTime::now_utc() + time::Duration::hours(hours));
 
     // Generate unique code (retry on collision — extremely rare with 8-char random)
     let code = loop {
@@ -130,7 +132,10 @@ async fn preview_invite(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> crate::error::Result<Json<serde_json::Value>> {
     let ip = crate::rate_limit::extract_client_ip(&headers, Some(addr));
-    state.rate_limiters.invite_preview_ip.check_key(&ip)
+    state
+        .rate_limiters
+        .invite_preview_ip
+        .check_key(&ip)
         .map_err(|_| AppError::TooManyRequests)?;
     // Public endpoint — no auth required
     #[derive(sqlx::FromRow)]
@@ -186,7 +191,10 @@ async fn join_via_invite(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> crate::error::Result<Json<serde_json::Value>> {
     let ip = crate::rate_limit::extract_client_ip(&headers, Some(addr));
-    state.rate_limiters.invite_join_ip.check_key(&ip)
+    state
+        .rate_limiters
+        .invite_join_ip
+        .check_key(&ip)
         .map_err(|_| AppError::TooManyRequests)?;
     // Atomic check-and-increment using SELECT FOR UPDATE inside a transaction
     let mut tx = state.db.begin().await?;
@@ -219,7 +227,9 @@ async fn join_via_invite(
     }
     if let Some(max) = invite.max_uses {
         if invite.uses >= max {
-            return Err(AppError::BadRequest("invite has reached its use limit".to_string()));
+            return Err(AppError::BadRequest(
+                "invite has reached its use limit".to_string(),
+            ));
         }
     }
 
@@ -234,7 +244,9 @@ async fn join_via_invite(
 
     if already_member > 0 {
         tx.rollback().await?;
-        return Err(AppError::Conflict("already a member of this server".to_string()));
+        return Err(AppError::Conflict(
+            "already a member of this server".to_string(),
+        ));
     }
 
     // Increment uses
@@ -244,22 +256,19 @@ async fn join_via_invite(
         .await?;
 
     // Add member
-    sqlx::query(
-        "INSERT INTO server_members (server_id, user_id, role) VALUES ($1, $2, 'member')",
-    )
-    .bind(invite.server_id)
-    .bind(auth.user_id)
-    .execute(&mut *tx)
-    .await?;
+    sqlx::query("INSERT INTO server_members (server_id, user_id, role) VALUES ($1, $2, 'member')")
+        .bind(invite.server_id)
+        .bind(auth.user_id)
+        .execute(&mut *tx)
+        .await?;
 
     tx.commit().await?;
 
     // Return server info
-    let server_name: String =
-        sqlx::query_scalar("SELECT name FROM servers WHERE id = $1")
-            .bind(invite.server_id)
-            .fetch_one(&state.db)
-            .await?;
+    let server_name: String = sqlx::query_scalar("SELECT name FROM servers WHERE id = $1")
+        .bind(invite.server_id)
+        .fetch_one(&state.db)
+        .await?;
 
     Ok(Json(serde_json::json!({
         "server_id": invite.server_id,

@@ -1,3 +1,4 @@
+use crate::{auth::middleware::AuthUser, error::AppError, state::AppState};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -7,11 +8,9 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
-use crate::{auth::middleware::AuthUser, error::AppError, state::AppState};
 
 pub fn router() -> Router<AppState> {
-    Router::new()
-        .route("/", post(send_message).get(get_messages))
+    Router::new().route("/", post(send_message).get(get_messages))
 }
 
 // --- Types ---
@@ -51,7 +50,9 @@ async fn send_message(
 
     let content = body.content.trim().to_string();
     if content.is_empty() {
-        return Err(AppError::BadRequest("message content cannot be empty".to_string()));
+        return Err(AppError::BadRequest(
+            "message content cannot be empty".to_string(),
+        ));
     }
     if content.chars().count() > 4000 {
         return Err(AppError::BadRequest(
@@ -60,12 +61,11 @@ async fn send_message(
     }
 
     // Verify channel exists and user is a member of its server
-    let server_id: Option<Uuid> = sqlx::query_scalar(
-        "SELECT server_id FROM channels WHERE id = $1",
-    )
-    .bind(channel_id)
-    .fetch_optional(&state.db)
-    .await?;
+    let server_id: Option<Uuid> =
+        sqlx::query_scalar("SELECT server_id FROM channels WHERE id = $1")
+            .bind(channel_id)
+            .fetch_optional(&state.db)
+            .await?;
 
     let server_id = server_id.ok_or(AppError::NotFound)?;
 
@@ -154,12 +154,11 @@ async fn get_messages(
     Query(params): Query<GetMessagesQuery>,
 ) -> crate::error::Result<Json<Vec<MessageResponse>>> {
     // Verify channel exists and user is a member
-    let server_id: Option<Uuid> = sqlx::query_scalar(
-        "SELECT server_id FROM channels WHERE id = $1",
-    )
-    .bind(channel_id)
-    .fetch_optional(&state.db)
-    .await?;
+    let server_id: Option<Uuid> =
+        sqlx::query_scalar("SELECT server_id FROM channels WHERE id = $1")
+            .bind(channel_id)
+            .fetch_optional(&state.db)
+            .await?;
 
     let server_id = server_id.ok_or(AppError::NotFound)?;
 
@@ -191,13 +190,12 @@ async fn get_messages(
 
     let rows = if let Some(before_id) = params.before {
         // Cursor-based pagination: messages before a given message ID
-        let before_ts: Option<OffsetDateTime> = sqlx::query_scalar(
-            "SELECT created_at FROM messages WHERE id = $1 AND channel_id = $2",
-        )
-        .bind(before_id)
-        .bind(channel_id)
-        .fetch_optional(&state.db)
-        .await?;
+        let before_ts: Option<OffsetDateTime> =
+            sqlx::query_scalar("SELECT created_at FROM messages WHERE id = $1 AND channel_id = $2")
+                .bind(before_id)
+                .bind(channel_id)
+                .fetch_optional(&state.db)
+                .await?;
 
         let before_ts = before_ts.ok_or(AppError::NotFound)?;
 

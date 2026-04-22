@@ -1,18 +1,18 @@
-# Deploying RuneChat on TrueNAS SCALE
+# Deploying Cauldron on TrueNAS SCALE
 
 Use the maintained deployment bundle in [`deploy/`](../deploy/).
 
 Fast path:
 
 ```bash
-git clone https://github.com/MoonRuneInc/RuneChat.git
-cd RuneChat/deploy
+git clone https://github.com/MoonRuneInc/Cauldron.git
+cd Cauldron/deploy
 ./truenas.sh init
 # edit .env.prod and fill DATABASE_URL
 ./truenas.sh up-build
 ```
 
-For pre-built image tarballs, put `runechat-app.tar` and `runechat-frontend.tar` in `deploy/`, then run:
+For pre-built image tarballs, put `cauldron-app.tar` and `cauldron-frontend.tar` in `deploy/`, then run:
 
 ```bash
 ./truenas.sh up

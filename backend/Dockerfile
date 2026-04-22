@@ -18,7 +18,7 @@ COPY frontend/src-tauri/Cargo.toml ./frontend/src-tauri/
 RUN mkdir -p frontend/src-tauri/src \
     && echo "pub fn run(){}" > frontend/src-tauri/src/lib.rs
 COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release -p runechat-backend --recipe-path recipe.json
+RUN cargo chef cook --release -p cauldron-backend --recipe-path recipe.json
 
 FROM chef AS builder
 COPY Cargo.toml Cargo.lock ./
@@ -27,10 +27,10 @@ COPY backend/ ./backend/
 COPY frontend/src-tauri/Cargo.toml ./frontend/src-tauri/
 RUN mkdir -p frontend/src-tauri/src \
     && echo "pub fn run(){}" > frontend/src-tauri/src/lib.rs
-RUN cargo build --release -p runechat-backend
+RUN cargo build --release -p cauldron-backend
 
 FROM alpine:3.23
 RUN apk add --no-cache ca-certificates wget
-COPY --from=builder /app/target/release/runechat-backend /usr/local/bin/runechat
+COPY --from=builder /app/target/release/cauldron-backend /usr/local/bin/cauldron
 EXPOSE 3000
-CMD ["runechat"]
+CMD ["cauldron"]

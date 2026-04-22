@@ -5,11 +5,11 @@ import uuid
 from typing import Optional
 import requests
 
-DEFAULT_TARGET = os.environ.get("RUNECHAT_TARGET", "http://localhost:8080")
+DEFAULT_TARGET = os.environ.get("CAULDRON_TARGET", "http://localhost:8080")
 
 
-class RuneChatClient:
-    """Session-based HTTP client for RuneChat API testing."""
+class CauldronClient:
+    """Session-based HTTP client for Cauldron API testing."""
 
     def __init__(self, target: str = DEFAULT_TARGET):
         self.target = target.rstrip("/")

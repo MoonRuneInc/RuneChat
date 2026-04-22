@@ -35,7 +35,7 @@ Android signing recovery release.
 
 ## v0.1.0 - 2026-04-22
 
-First watched RuneChat release candidate.
+First watched Cauldron release candidate.
 
 ### Added
 

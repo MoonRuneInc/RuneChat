@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem in RuneChat.
+description: Report a reproducible problem in Cauldron.
 title: "[Bug]: "
 labels:
   - bug

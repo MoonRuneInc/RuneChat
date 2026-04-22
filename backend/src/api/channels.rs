@@ -1,3 +1,4 @@
+use crate::{auth::middleware::AuthUser, error::AppError, state::AppState};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -7,7 +8,6 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
-use crate::{auth::middleware::AuthUser, error::AppError, state::AppState};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -18,8 +18,7 @@ pub fn router() -> Router<AppState> {
 
 pub fn channel_router() -> Router<AppState> {
     // Mounted at /api/channels for direct channel access
-    Router::new()
-        .route("/:id", get(get_channel_by_id).delete(delete_channel_by_id))
+    Router::new().route("/:id", get(get_channel_by_id).delete(delete_channel_by_id))
 }
 
 // --- Slug generation ---
@@ -28,10 +27,7 @@ pub fn generate_slug(name: &str) -> String {
     use unicode_normalization::UnicodeNormalization;
 
     // NFKC normalize and lowercase
-    let normalized: String = name
-        .nfkc()
-        .flat_map(|c| c.to_lowercase())
-        .collect();
+    let normalized: String = name.nfkc().flat_map(|c| c.to_lowercase()).collect();
 
     // Replace spaces with hyphens, strip non-alphanumeric (except hyphen)
     let mut slug = String::with_capacity(normalized.len());
@@ -156,13 +152,12 @@ async fn resolve_slug_collision(
     server_id: Uuid,
     base_slug: &str,
 ) -> crate::error::Result<String> {
-    let existing: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM channels WHERE server_id = $1 AND slug = $2",
-    )
-    .bind(server_id)
-    .bind(base_slug)
-    .fetch_one(&state.db)
-    .await?;
+    let existing: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM channels WHERE server_id = $1 AND slug = $2")
+            .bind(server_id)
+            .bind(base_slug)
+            .fetch_one(&state.db)
+            .await?;
 
     if existing == 0 {
         return Ok(base_slug.to_string());
@@ -170,13 +165,12 @@ async fn resolve_slug_collision(
 
     for suffix in 2..=99u32 {
         let candidate = format!("{base_slug}-{suffix}");
-        let count: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM channels WHERE server_id = $1 AND slug = $2",
-        )
-        .bind(server_id)
-        .bind(&candidate)
-        .fetch_one(&state.db)
-        .await?;
+        let count: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM channels WHERE server_id = $1 AND slug = $2")
+                .bind(server_id)
+                .bind(&candidate)
+                .fetch_one(&state.db)
+                .await?;
 
         if count == 0 {
             return Ok(candidate);
@@ -336,13 +330,12 @@ async fn delete_channel_internal(
     server_id: Uuid,
     channel_id: Uuid,
 ) -> crate::error::Result<StatusCode> {
-    let role: Option<String> = sqlx::query_scalar(
-        "SELECT role FROM server_members WHERE server_id = $1 AND user_id = $2",
-    )
-    .bind(server_id)
-    .bind(user_id)
-    .fetch_optional(&state.db)
-    .await?;
+    let role: Option<String> =
+        sqlx::query_scalar("SELECT role FROM server_members WHERE server_id = $1 AND user_id = $2")
+            .bind(server_id)
+            .bind(user_id)
+            .fetch_optional(&state.db)
+            .await?;
 
     match role.as_deref() {
         Some("owner") | Some("admin") => {}
@@ -350,13 +343,11 @@ async fn delete_channel_internal(
         None => return Err(AppError::Forbidden),
     }
 
-    let deleted = sqlx::query(
-        "DELETE FROM channels WHERE id = $1 AND server_id = $2",
-    )
-    .bind(channel_id)
-    .bind(server_id)
-    .execute(&state.db)
-    .await?;
+    let deleted = sqlx::query("DELETE FROM channels WHERE id = $1 AND server_id = $2")
+        .bind(channel_id)
+        .bind(server_id)
+        .execute(&state.db)
+        .await?;
 
     if deleted.rows_affected() == 0 {
         return Err(AppError::NotFound);

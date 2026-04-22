@@ -20,6 +20,8 @@ pub enum AppError {
     Conflict(String),
     #[error("too many requests")]
     TooManyRequests,
+    #[error("service unavailable")]
+    ServiceUnavailable,
     #[error("internal error")]
     Internal(#[from] anyhow::Error),
 }
@@ -33,9 +35,11 @@ impl IntoResponse for AppError {
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
             AppError::Conflict(msg) => (StatusCode::CONFLICT, msg.clone()),
             AppError::TooManyRequests => (StatusCode::TOO_MANY_REQUESTS, self.to_string()),
-            AppError::Database(_) | AppError::Internal(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "internal server error".to_string())
-            }
+            AppError::ServiceUnavailable => (StatusCode::SERVICE_UNAVAILABLE, self.to_string()),
+            AppError::Database(_) | AppError::Internal(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "internal server error".to_string(),
+            ),
         };
         (status, Json(serde_json::json!({ "error": message }))).into_response()
     }

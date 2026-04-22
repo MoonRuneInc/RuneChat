@@ -36,7 +36,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: runechat-web
+          name: cauldron-web
           path: frontend/dist/
 
   tauri-check:
@@ -71,7 +71,7 @@ jobs:
         working-directory: ./frontend
 
       - name: Check Tauri crate
-        run: cargo check -p runechat
+        run: cargo check -p cauldron
 
   tauri-windows:
     if: github.event_name == 'workflow_dispatch'
@@ -153,7 +153,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: runechat-windows
+          name: cauldron-windows
           path: target/release/bundle/
 
   tauri-android:
@@ -224,5 +224,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: runechat-android
+          name: cauldron-android
           path: frontend/src-tauri/gen/android/app/build/outputs/apk/
