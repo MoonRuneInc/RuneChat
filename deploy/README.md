@@ -1,114 +1,178 @@
-# RuneChat — TrueNAS SCALE Staging Deployment
+# RuneChat TrueNAS SCALE Deploy
 
-> **Plan:** 09 — TrueNAS Staging Deploy
-> **Target:** `chat.moonrune.cc` via Cloudflare Tunnel
-> **Postgres:** Neon free tier
-> **Scope:** Team testing and invite-only beta
-
----
-
-## Prerequisites
-
-- TrueNAS SCALE 24.04+ (Dragonfish) with Docker available
-- Cloudflare account with `moonrune.cc` under management
-- Neon account
-- This `deploy/` directory copied to the TrueNAS host
-
----
-
-## Quick Start (TrueNAS VM, self-contained)
-
-This path uses pre-built images. You only need the files in `deploy/` on the host.
-
-### 1. Copy deploy artifacts to TrueNAS
+This directory is the TrueNAS deployment bundle. The easiest path is:
 
 ```bash
-# From your local machine
-scp deploy/* root@<truenas-ip>:/root/runechat-deploy/
-ssh root@<truenas-ip>
-cd /root/runechat-deploy
+git clone https://github.com/MoonRuneInc/RuneChat.git
+cd RuneChat/deploy
+./truenas.sh init
 ```
 
-### 2. Load pre-built images
+Edit `.env.prod`, fill `DATABASE_URL`, confirm `DOMAIN`, then choose one start mode:
 
 ```bash
-docker load -i runechat-app.tar
-docker load -i runechat-frontend.tar
+# If runechat-app.tar and runechat-frontend.tar are in deploy/
+./truenas.sh up
+
+# If you cloned the full repo and want TrueNAS to build the images
+./truenas.sh up-build
 ```
 
-### 3. Provision Neon Database
-
-1. Create a project at [console.neon.tech](https://console.neon.tech)
-2. Create database `runechat`
-3. Copy the connection string (it looks like):
-   ```
-   postgresql://<user>:<pass>@<host>.neon.tech/runechat?sslmode=require
-   ```
-
-### 4. Prepare `.env.prod`
+The script validates config, starts the stack, and waits for:
 
 ```bash
-cp .env.prod.example .env.prod
-# Edit and fill in all required values
+http://localhost:8080/health
 ```
 
-Required:
-- `DATABASE_URL` — Neon connection string
-- `JWT_SECRET` — `openssl rand -hex 64`
-- `TOTP_ENCRYPTION_KEY` — `openssl rand -base64 32`
-- `DOMAIN=chat.moonrune.cc`
+Expected response:
 
-### 5. Validate compose config
-
-```bash
-docker compose --env-file .env.prod -f docker-compose.truenas.yml config
+```json
+{"status":"ok"}
 ```
 
-Or, if you prefer Make:
+If you want the portable image bundle first, run this from a full repo clone
+on any Docker-capable build machine:
 
 ```bash
-make config
+./deploy/build-truenas-images.sh
 ```
 
-### 6. Start the stack
+That creates:
 
-```bash
-docker compose --env-file .env.prod -f docker-compose.truenas.yml up -d
+```text
+deploy/runechat-app.tar
+deploy/runechat-frontend.tar
 ```
 
-Or with Make:
+## What You Still Need
+
+- TrueNAS SCALE with Docker Compose available.
+- A managed PostgreSQL database. Neon works for staging.
+- A TLS path to the host, either Cloudflare Tunnel or your existing reverse proxy.
+- Port `8080` free on the TrueNAS host.
+
+Do not deploy public production against the local development Postgres container. This bundle expects `DATABASE_URL` to point at managed or operator-owned Postgres.
+
+## One-Command Tasks
+
+Run from `deploy/`:
+
+| Command | Purpose |
+|---|---|
+| `./truenas.sh init` | Create `.env.prod`, generate `JWT_SECRET`, generate `TOTP_ENCRYPTION_KEY` |
+| `./truenas.sh doctor` | Validate Docker, env, compose config, images, and health |
+| `./truenas.sh images` | Build and export `runechat-app.tar` and `runechat-frontend.tar`; requires full repo |
+| `./truenas.sh load` | Load `runechat-app.tar` and `runechat-frontend.tar` if present |
+| `./truenas.sh up` | Start the self-contained pre-built image deployment |
+| `./truenas.sh up-build` | Build from source and start; requires full repo clone |
+| `./truenas.sh status` | Show container status |
+| `./truenas.sh logs` | Follow stack logs |
+| `./truenas.sh down` | Stop stack |
+| `./truenas.sh clean` | Stop stack and remove volumes |
+
+`make` wraps the same commands:
 
 ```bash
+make init
+make images
+make doctor
 make up
+make logs
 ```
 
-### 7. Verify locally
+## Configure `.env.prod`
+
+`./truenas.sh init` writes:
+
+```env
+DATABASE_URL=
+JWT_SECRET=<generated>
+TOTP_ENCRYPTION_KEY=<generated>
+DOMAIN=chat.moonrune.cc
+REDIS_URL=redis://redis:6379
+RUST_LOG=info
+RUNECHAT_APP_IMAGE=runechat-app:latest
+RUNECHAT_FRONTEND_IMAGE=runechat-frontend:latest
+```
+
+Fill:
+
+- `DATABASE_URL`: managed Postgres connection string, for example Neon:
+  `postgresql://<user>:<pass>@<host>.neon.tech/runechat?sslmode=require`
+- `DOMAIN`: public hostname, for example `chat.moonrune.cc`
+
+Leave `REDIS_URL` alone unless you are running Redis outside this compose stack.
+
+## Deployment Modes
+
+### Self-Contained Image Bundle
+
+Use this when you want to build once, copy only the deploy bundle to TrueNAS,
+and avoid building on the TrueNAS host.
+
+On your build machine:
 
 ```bash
-curl http://localhost:8080/health
+git clone https://github.com/MoonRuneInc/RuneChat.git
+cd RuneChat
+./deploy/build-truenas-images.sh
 ```
 
-Expected: `{"status":"ok"}`
+Copy these files to the TrueNAS host:
 
----
+```text
+deploy/docker-compose.truenas.yml
+deploy/prod.conf
+deploy/truenas.sh
+deploy/Makefile
+deploy/runechat-app.tar
+deploy/runechat-frontend.tar
+```
 
-## Build from Source on TrueNAS
+On TrueNAS:
 
-If you prefer to build the images on TrueNAS rather than loading pre-built `.tar` files:
+```bash
+cd /path/to/runechat-deploy
+./truenas.sh init
+# edit .env.prod
+./truenas.sh up
+```
 
-1. Clone or copy the **entire repo** (not just `deploy/`) to TrueNAS.
-2. Run from the repo root:
-   ```bash
-   docker compose -f deploy/docker-compose.truenas-build.yml up --build -d
-   ```
+The script loads tarballs automatically if they are present.
 
-This compose file uses parent-directory build contexts and bind-mounts `nginx/prod.conf` from the repo tree. It will not work if only `deploy/` is copied.
+### Build From Source
 
----
+Use this when the full repo is present on TrueNAS:
 
-## Cloudflare Tunnel Setup
+```bash
+git clone https://github.com/MoonRuneInc/RuneChat.git
+cd RuneChat/deploy
+./truenas.sh init
+# edit .env.prod
+./truenas.sh up-build
+```
 
-### Install cloudflared
+This uses `docker-compose.truenas-build.yml` and Docker build contexts from the repo.
+
+### TrueNAS Custom App
+
+Use `docker-compose.truenas-custom-app.yml` only when you want to paste compose into the TrueNAS Custom App UI.
+
+You must provide:
+
+- `RUNECHAT_APP_IMAGE`
+- `RUNECHAT_FRONTEND_IMAGE`
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `TOTP_ENCRYPTION_KEY`
+- `DOMAIN`
+- `NGINX_CONFIG_PATH`
+
+Bind-mount `deploy/prod.conf` as the nginx config.
+
+## Cloudflare Tunnel
+
+Install `cloudflared` on the TrueNAS host:
 
 ```bash
 curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
@@ -116,149 +180,102 @@ curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloud
 chmod +x /usr/local/bin/cloudflared
 ```
 
-### Authenticate
+Authenticate and create the tunnel:
 
 ```bash
 cloudflared tunnel login
-```
-
-This prints a URL. Open it in a browser, select `moonrune.cc`, authorize.
-
-### Create tunnel
-
-```bash
 cloudflared tunnel create runechat
 ```
 
-Copy the tunnel UUID from the output.
-
-### Configure
-
-Edit `cloudflared-config.yml` and replace `<TUNNEL-ID>` with the UUID:
-
-```yaml
-tunnel: <TUNNEL-ID>
-credentials-file: /root/.cloudflared/<TUNNEL-ID>.json
-
-ingress:
-  - hostname: chat.moonrune.cc
-    service: http://localhost:8080
-  - service: http_status:404
-```
-
-Copy to the expected location:
+Edit `cloudflared-config.yml`, replace `<TUNNEL-ID>`, then install it:
 
 ```bash
+mkdir -p ~/.cloudflared
 cp cloudflared-config.yml ~/.cloudflared/config.yml
-```
-
-### Route DNS
-
-```bash
 cloudflared tunnel route dns runechat chat.moonrune.cc
-```
-
-### Run tunnel
-
-```bash
-# Foreground (for testing)
-cloudflared tunnel run runechat
-
-# Background service
 cloudflared service install
 systemctl enable cloudflared
 systemctl start cloudflared
 ```
 
-### Verify tunnel health
-
-Check the [Cloudflare dashboard](https://dash.cloudflare.com) → Zero Trust → Tunnels.
-The `runechat` tunnel should show as **Healthy**.
-
----
-
-## Verify Public Access
+Verify:
 
 ```bash
-# Health endpoint
 curl https://chat.moonrune.cc/health
-
-# WebSocket (manual browser test recommended)
-# Open https://chat.moonrune.cc in a browser, register, create a server,
-# send a message, confirm real-time delivery.
 ```
 
----
+## Existing Reverse Proxy
 
-## TrueNAS Custom App (24.04+)
+If you already run Nginx Proxy Manager, Zoraxy, Caddy, or another TLS proxy:
 
-If your TrueNAS SCALE supports Custom Apps with Docker Compose:
+| Setting | Value |
+|---|---|
+| Upstream scheme | `http` |
+| Upstream host | TrueNAS host IP |
+| Upstream port | `8080` |
+| WebSockets | enabled |
+| TLS | terminate at the proxy |
 
-1. Build images locally (or on TrueNAS):
-   ```bash
-   docker compose -f docker-compose.truenas-build.yml build
-   ```
+Check both:
 
-2. Tag and save:
-   ```bash
-   docker tag runechat-app:latest ghcr.io/<org>/runechat-app:staging
-   docker tag runechat-frontend:latest ghcr.io/<org>/runechat-frontend:staging
-   ```
+```bash
+curl http://localhost:8080/health
+curl https://chat.moonrune.cc/health
+```
 
-3. Push to a registry (GHCR, Docker Hub, etc.) or load directly on TrueNAS.
-
-4. In TrueNAS UI: **Apps** → **Custom App** → paste the contents of
-   `docker-compose.truenas-custom-app.yml`.
-
-5. Set environment variables in the TrueNAS UI.
-
-6. Bind-mount `nginx/prod.conf` to `/etc/nginx/conf.d/default.conf`.
-
----
-
-## Artifacts in this directory
+## Files
 
 | File | Purpose |
 |---|---|
-| `docker-compose.truenas.yml` | VM deployment — self-contained, uses pre-built images (needs `--env-file .env.prod`) |
-| `docker-compose.truenas-build.yml` | VM deployment — builds from source (requires full repo) |
-| `docker-compose.truenas-custom-app.yml` | Custom App deployment — uses pre-built images |
-| `cloudflared-config.yml` | Cloudflare Tunnel ingress config |
-| `prod.conf` | nginx production config (copy of `nginx/prod.conf`) |
-| `runechat-app.tar` | Pre-built backend image (exported) |
-| `runechat-frontend.tar` | Pre-built frontend image (exported) |
-
----
-
-## Rollback
-
-```bash
-# Stop everything
-docker compose --env-file .env.prod -f docker-compose.truenas.yml down -v
-
-# Stop tunnel
-systemctl stop cloudflared
-```
-
----
+| `truenas.sh` | Operator helper script |
+| `build-truenas-images.sh` | Builds and exports the backend/frontend image tarballs |
+| `Makefile` | Short wrappers around `truenas.sh` |
+| `docker-compose.truenas.yml` | Self-contained deployment using pre-built images |
+| `docker-compose.truenas-build.yml` | Full-repo source build deployment |
+| `docker-compose.truenas-custom-app.yml` | TrueNAS Custom App compose template |
+| `prod.conf` | nginx proxy config |
+| `cloudflared-config.yml` | Cloudflare Tunnel template |
 
 ## Troubleshooting
 
-### `cloudflared` shows tunnel as Down
-- Verify nginx is listening on `127.0.0.1:8080`
-- Check `docker compose ps` — all containers should be `healthy`
-- Check Cloudflare dashboard for tunnel errors
+### `DATABASE_URL is empty`
 
-### `/health` returns 502
-- Verify the `app` container is running: `docker compose logs app`
-- Check `DATABASE_URL` is correct and Neon allows connections from the TrueNAS IP
+Run:
 
-### WebSocket fails to connect
-- Verify `DOMAIN=chat.moonrune.cc` in `.env.prod`
-- The backend WS handler checks `Origin: https://chat.moonrune.cc`
-- Cloudflare Tunnel preserves the original Origin header
+```bash
+./truenas.sh init
+nano .env.prod
+```
 
-### Rate limits seem off
-- With Cloudflare Tunnel, nginx sees `X-Forwarded-For` from Cloudflare
-- `prod.conf` uses the `real_ip` module to set `$remote_addr` correctly
-- Rate limiting keys should reflect actual client IPs
+Fill the managed Postgres connection string.
+
+### Missing `runechat-app:latest`
+
+Use one of these:
+
+```bash
+./truenas.sh load
+./truenas.sh up-build
+```
+
+`load` requires image tarballs. `up-build` requires the full repo.
+
+### Local health fails
+
+Run:
+
+```bash
+./truenas.sh status
+./truenas.sh logs
+```
+
+Common causes:
+
+- Postgres URL is wrong or unreachable from TrueNAS.
+- Secret values were left blank.
+- Port `8080` is already in use.
+- Images were not loaded and source build was not used.
+
+### Web works but real-time chat fails
+
+Enable WebSocket support in the upstream proxy. `/ws` must be forwarded to port `8080`.

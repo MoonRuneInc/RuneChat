@@ -1,21 +1,36 @@
 export COMPOSE_ENV_FILES := .env.prod
 
-.PHONY: up down logs config clean
+.PHONY: init doctor images load up up-build down logs status config clean
+
+init:
+	./truenas.sh init
+
+doctor:
+	./truenas.sh doctor
+
+images:
+	./truenas.sh images
+
+load:
+	./truenas.sh load
 
 up:
-	@test -f .env.prod || (echo "ERROR: .env.prod not found. Copy .env.prod.example to .env.prod and fill in required values." && exit 1)
-	docker compose -f docker-compose.truenas.yml up -d
+	./truenas.sh up
+
+up-build:
+	./truenas.sh up-build
 
 down:
-	docker compose -f docker-compose.truenas.yml down
+	./truenas.sh down
 
 logs:
-	docker compose -f docker-compose.truenas.yml logs -f
+	./truenas.sh logs
+
+status:
+	./truenas.sh status
 
 config:
-	@test -f .env.prod || (echo "ERROR: .env.prod not found. Copy .env.prod.example to .env.prod and fill in required values." && exit 1)
-	docker compose -f docker-compose.truenas.yml config
-
+	./truenas.sh config
 
 clean:
-	docker compose -f docker-compose.truenas.yml down -v
+	./truenas.sh clean
