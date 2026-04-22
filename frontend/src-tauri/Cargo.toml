@@ -1,6 +1,6 @@
 [package]
 name = "cauldron"
-version = "0.1.0"
+version = "0.1.4"
 description = "Cauldron — Cross-platform chat client"
 authors = ["MoonRune Inc. <dev@moonrune.cc>"]
 edition = "2021"
