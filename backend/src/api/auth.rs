@@ -10,11 +10,16 @@ use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 use crate::{
+    audit,
     auth::{middleware::AuthUser, password, tokens, totp},
     error::AppError,
     pwned::{self, PwnedCheckResult},
     state::AppState,
 };
+
+const LOGIN_FAIL_THRESHOLD: i64 = 15;
+const LOGIN_LOCKOUT_MINUTES: i64 = 15;
+const LOGIN_FAIL_TTL_SECS: u64 = 900; // 15 min window
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -163,6 +168,8 @@ async fn register(
         AppError::Database(e)
     })?;
 
+    audit::log(&state.db, "register", Some(user.id), None, None).await;
+
     let (jwt, jar) =
         issue_tokens(&state, jar, user.id, &user.username, &user.account_status).await?;
 
@@ -184,7 +191,7 @@ async fn register(
 
 #[derive(Deserialize)]
 struct LoginBody {
-    identifier: String, // username or email
+    identifier: String,
     password: String,
 }
 
@@ -207,10 +214,11 @@ async fn login(
         username: String,
         password_hash: String,
         account_status: String,
+        locked_until: Option<OffsetDateTime>,
     }
 
     let user = sqlx::query_as::<_, UserRow>(
-        "SELECT id, username::TEXT as username, password_hash, account_status
+        "SELECT id, username::TEXT as username, password_hash, account_status, locked_until
          FROM users
          WHERE username = $1 OR email = $1
          LIMIT 1",
@@ -220,7 +228,50 @@ async fn login(
     .await?
     .ok_or(AppError::Unauthorized)?;
 
+    if let Some(locked_until) = user.locked_until {
+        if locked_until > OffsetDateTime::now_utc() {
+            return Err(AppError::BadRequest(
+                "account temporarily locked due to too many failed login attempts — try again later".to_string(),
+            ));
+        }
+    }
+
     if !password::verify(&body.password, &user.password_hash)? {
+        let fails_key = format!("login_fails:{}", body.identifier.to_lowercase());
+        let mut redis = state.redis.clone();
+
+        let fails: i64 = redis::cmd("INCR")
+            .arg(&fails_key)
+            .query_async(&mut redis)
+            .await
+            .unwrap_or(0);
+
+        let _ = redis::cmd("EXPIRE")
+            .arg(&fails_key)
+            .arg(LOGIN_FAIL_TTL_SECS)
+            .query_async::<_, ()>(&mut redis)
+            .await;
+
+        if fails >= LOGIN_FAIL_THRESHOLD {
+            let _ = sqlx::query(
+                "UPDATE users SET locked_until = now() + $1 * interval '1 minute' WHERE id = $2",
+            )
+            .bind(LOGIN_LOCKOUT_MINUTES)
+            .bind(user.id)
+            .execute(&state.db)
+            .await;
+
+            audit::log(
+                &state.db,
+                "account_locked",
+                Some(user.id),
+                Some(&ip),
+                Some(serde_json::json!({ "reason": "too many failed login attempts" })),
+            )
+            .await;
+        }
+
+        audit::log(&state.db, "login_failed", Some(user.id), Some(&ip), None).await;
         return Err(AppError::Unauthorized);
     }
 
@@ -229,6 +280,16 @@ async fn login(
             "account is locked — use TOTP or email OTP to unlock".to_string(),
         ));
     }
+
+    // Clear failure counter on successful login
+    let fails_key = format!("login_fails:{}", body.identifier.to_lowercase());
+    let mut redis = state.redis.clone();
+    let _ = redis::cmd("DEL")
+        .arg(&fails_key)
+        .query_async::<_, ()>(&mut redis)
+        .await;
+
+    audit::log(&state.db, "login_success", Some(user.id), Some(&ip), None).await;
 
     let (jwt, jar) =
         issue_tokens(&state, jar, user.id, &user.username, &user.account_status).await?;
@@ -277,9 +338,7 @@ async fn refresh(
     .await?
     .ok_or(AppError::Unauthorized)?;
 
-    // Replay attack: token was already used
     if row.revoked_at.is_some() {
-        // Kill all sessions and mark account compromised
         sqlx::query(
             "UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL",
         )
@@ -295,6 +354,8 @@ async fn refresh(
         .execute(&state.db)
         .await?;
 
+        audit::log(&state.db, "replay_attack_detected", Some(row.user_id), None, None).await;
+
         return Err(AppError::Unauthorized);
     }
 
@@ -302,13 +363,11 @@ async fn refresh(
         return Err(AppError::Unauthorized);
     }
 
-    // Rotate: revoke current token
     sqlx::query("UPDATE refresh_tokens SET revoked_at = now() WHERE id = $1")
         .bind(row.id)
         .execute(&state.db)
         .await?;
 
-    // Fetch current user state for new JWT
     #[derive(sqlx::FromRow)]
     struct UserRow {
         username: String,
@@ -343,7 +402,6 @@ async fn logout(
             .await?;
     }
 
-    // Clear cookie
     let expired = Cookie::build(("refresh_token", ""))
         .http_only(true)
         .secure(true)
@@ -361,7 +419,6 @@ async fn totp_enroll(
     State(state): State<AppState>,
     auth: AuthUser,
 ) -> crate::error::Result<Json<serde_json::Value>> {
-    // Check if already enrolled
     let existing = sqlx::query_scalar::<_, i64>(
         "SELECT COUNT(*) FROM totp_secrets WHERE user_id = $1 AND verified_at IS NOT NULL",
     )
@@ -373,7 +430,6 @@ async fn totp_enroll(
         return Err(AppError::Conflict("TOTP already enrolled".to_string()));
     }
 
-    // Remove any pending (unverified) enrollment
     sqlx::query("DELETE FROM totp_secrets WHERE user_id = $1 AND verified_at IS NULL")
         .bind(auth.user_id)
         .execute(&state.db)
@@ -406,6 +462,7 @@ async fn totp_verify_enrollment(
 ) -> crate::error::Result<StatusCode> {
     state.rate_limiters.totp_user.check_key(&auth.user_id)
         .map_err(|_| AppError::TooManyRequests)?;
+
     #[derive(sqlx::FromRow)]
     struct SecretRow {
         id: Uuid,
@@ -433,6 +490,8 @@ async fn totp_verify_enrollment(
         .execute(&state.db)
         .await?;
 
+    audit::log(&state.db, "totp_enrolled", Some(auth.user_id), None, None).await;
+
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -440,7 +499,7 @@ async fn totp_verify_enrollment(
 
 #[derive(Deserialize)]
 struct UnlockTotpBody {
-    identifier: String, // username or email
+    identifier: String,
     code: String,
 }
 
@@ -487,13 +546,14 @@ async fn unlock_totp(
         return Err(AppError::BadRequest("invalid TOTP code".to_string()));
     }
 
-    // Unlock
     sqlx::query(
         "UPDATE users SET account_status = 'active', compromise_detected_at = NULL WHERE id = $1",
     )
     .bind(user.id)
     .execute(&state.db)
     .await?;
+
+    audit::log(&state.db, "account_unlocked_totp", Some(user.id), None, None).await;
 
     let (jwt, jar) = issue_tokens(&state, jar, user.id, &user.username, "active").await?;
 
@@ -536,7 +596,6 @@ async fn unlock_email_otp_send(
     .await?
     .ok_or(AppError::BadRequest("no compromised account found".to_string()))?;
 
-    // Don't allow email OTP if TOTP is enrolled — use TOTP instead
     let totp_enrolled = sqlx::query_scalar::<_, i64>(
         "SELECT COUNT(*) FROM totp_secrets WHERE user_id = $1 AND verified_at IS NOT NULL",
     )
@@ -553,7 +612,6 @@ async fn unlock_email_otp_send(
     let otp = crate::auth::email::generate_otp();
     let redis_key = format!("email_otp:{}", user.id);
 
-    // Store in Redis with 5-minute TTL
     let mut redis = state.redis.clone();
     redis::cmd("SET")
         .arg(&redis_key)
@@ -610,20 +668,20 @@ async fn unlock_email_otp_verify(
         return Err(AppError::BadRequest("invalid OTP code".to_string()));
     }
 
-    // Consume OTP
     redis::cmd("DEL")
         .arg(&redis_key)
         .query_async::<_, ()>(&mut redis)
         .await
         .map_err(|e| AppError::Internal(anyhow::anyhow!("redis del: {e}")))?;
 
-    // Unlock
     sqlx::query(
         "UPDATE users SET account_status = 'active', compromise_detected_at = NULL WHERE id = $1",
     )
     .bind(user.id)
     .execute(&state.db)
     .await?;
+
+    audit::log(&state.db, "account_unlocked_email_otp", Some(user.id), None, None).await;
 
     let (jwt, jar) = issue_tokens(&state, jar, user.id, &user.username, "active").await?;
 
