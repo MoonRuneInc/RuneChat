@@ -14,10 +14,10 @@ On every session start:
 3. Read `/mnt/d/Vaults/OfficeVault/00_System/Agent_Start_Here.md`
 4. Read `/mnt/d/Vaults/OfficeVault/01_Agents/Rhea_Solis.md`
 5. Read the Cauldron canon files:
-   - `/mnt/d/Vaults/OfficeVault/02_Projects/RuneChat/00_Overview.md`
-   - `/mnt/d/Vaults/OfficeVault/02_Projects/RuneChat/01_Status.md`
-   - `/mnt/d/Vaults/OfficeVault/02_Projects/RuneChat/02_Tasks.md`
-   - `/mnt/d/Vaults/OfficeVault/02_Projects/RuneChat/03_Decisions.md`
+   - `/mnt/d/Vaults/OfficeVault/02_Projects/Cauldron/00_Overview.md`
+   - `/mnt/d/Vaults/OfficeVault/02_Projects/Cauldron/01_Status.md`
+   - `/mnt/d/Vaults/OfficeVault/02_Projects/Cauldron/02_Tasks.md`
+   - `/mnt/d/Vaults/OfficeVault/02_Projects/Cauldron/03_Decisions.md`
 
 After completing work, update the vault clearly. The vault is the source of truth.
 

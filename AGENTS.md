@@ -173,7 +173,7 @@ curl http://localhost:8080
 
 ## Notes for Future Agents
 
-1. Before proposing architecture changes, check the vault canon at `/mnt/d/Vaults/OfficeVault/02_Projects/RuneChat/`.
+1. Before proposing architecture changes, check the vault canon at `/mnt/d/Vaults/OfficeVault/02_Projects/Cauldron/`.
 2. All implementation plans live in `docs/superpowers/plans/`.
 3. Heed Rhea's QA callouts — they are requirements, not suggestions.
 4. Commit atomically. Push feature work through review branches unless the user explicitly approves direct release/hygiene work.
