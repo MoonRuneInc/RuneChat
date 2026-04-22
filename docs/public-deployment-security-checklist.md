@@ -1,4 +1,4 @@
-# RuneChat Public Deployment Security Checklist
+# Cauldron Public Deployment Security Checklist
 
 > **Purpose:** Answer "Can we safely expose this to the public internet today?"
 >
@@ -17,7 +17,7 @@ Public launch stops if any item is unchecked. These are must-pass.
 
 - [ ] **Backend unit tests pass** (run against a CI or local test DB — **never production**)
   ```bash
-  DATABASE_URL=postgres://<ci-or-local-test-db> cargo test -p runechat-backend
+  DATABASE_URL=postgres://<ci-or-local-test-db> cargo test -p cauldron-backend
   ```
   Expected: 22+ unit tests passed, 0 failed. Auth regression test passed.
 
@@ -29,7 +29,7 @@ Public launch stops if any item is unchecked. These are must-pass.
   Production launch verification (live target):
   ```bash
   cd redteam && source .venv/bin/activate && \
-    RUNECHAT_TARGET=https://chat.moonrune.cc pytest -v --tb=short
+    CAULDRON_TARGET=https://chat.moonrune.cc pytest -v --tb=short
   ```
   Expected: 49 passed, 8 skipped, 0 failed.
   The 4 rate-limit tests (`test_login_brute_force_is_rate_limited`,
@@ -135,7 +135,7 @@ cd redteam && source .venv/bin/activate && pytest -v --tb=short
 ### 3.2 Backend Tests
 
 ```bash
-DATABASE_URL=postgres://<ci-or-local-test-db> cargo test -p runechat-backend
+DATABASE_URL=postgres://<ci-or-local-test-db> cargo test -p cauldron-backend
 ```
 Do not use `.env.prod` or the production managed Postgres URL for this command.
 **Expected:** 22+ passed, 0 failed.

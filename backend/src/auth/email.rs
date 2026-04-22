@@ -27,9 +27,9 @@ pub async fn send_otp(to_email: &str, otp: &str, config: &Config) -> crate::erro
     let email = Message::builder()
         .from(from)
         .to(to)
-        .subject("RuneChat account unlock code")
+        .subject("Cauldron account unlock code")
         .body(format!(
-            "Your RuneChat unlock code is: {otp}\n\nThis code expires in 5 minutes.\n\nIf you did not request this, your account may be compromised."
+            "Your Cauldron unlock code is: {otp}\n\nThis code expires in 5 minutes.\n\nIf you did not request this, your account may be compromised."
         ))
         .map_err(|e| AppError::Internal(anyhow::anyhow!("email build: {e}")))?;
 

@@ -1,7 +1,7 @@
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   let _ = env_logger::try_init();
-  log::info!("RuneChat starting...");
+  log::info!("Cauldron starting...");
 
   let mut builder = tauri::Builder::default()
     .plugin(tauri_plugin_http::init())

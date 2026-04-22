@@ -31,7 +31,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: runechat-web
+          name: cauldron-web
           path: frontend/dist/
 
   tauri-windows:
@@ -65,7 +65,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: runechat-windows
+          name: cauldron-windows
           path: target/release/bundle/
 
   tauri-android:
@@ -124,5 +124,5 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: runechat-android
+          name: cauldron-android
           path: frontend/src-tauri/gen/android/app/build/outputs/apk/

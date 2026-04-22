@@ -1,4 +1,4 @@
-# RuneChat — TrueNAS SCALE Custom App (pre-built images)
+# Cauldron — TrueNAS SCALE Custom App (pre-built images)
 #
 # For TrueNAS SCALE 24.04+ Custom Apps.
 # Images must be pre-built and available to TrueNAS (e.g., loaded via
@@ -20,7 +20,7 @@ services:
       retries: 3
 
   app:
-    image: ${RUNECHAT_APP_IMAGE:?RUNECHAT_APP_IMAGE is required}
+    image: ${CAULDRON_APP_IMAGE:?CAULDRON_APP_IMAGE is required}
     restart: unless-stopped
     environment:
       DATABASE_URL: ${DATABASE_URL:?required}
@@ -41,7 +41,7 @@ services:
       retries: 3
 
   frontend:
-    image: ${RUNECHAT_FRONTEND_IMAGE:?RUNECHAT_FRONTEND_IMAGE is required}
+    image: ${CAULDRON_FRONTEND_IMAGE:?CAULDRON_FRONTEND_IMAGE is required}
     restart: unless-stopped
     expose:
       - "80"

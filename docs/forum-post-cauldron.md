@@ -1,8 +1,8 @@
-# RuneChat — A FOSS Discord Alternative We're Building
+# Cauldron — A FOSS Discord Alternative We're Building
 
 Hey all,
 
-So I've been building a Discord alternative called **RuneChat** and figured it's time to actually talk about it.
+So I've been building a Discord alternative called **Cauldron** and figured it's time to actually talk about it.
 
 ---
 
@@ -19,14 +19,14 @@ None of it is catastrophic on its own, but it adds up. So I started building som
 
 ---
 
-## What RuneChat is
+## What Cauldron is
 
 It's a self-hostable community chat platform — servers, channels, invites, real-time messaging, clean modern UI. The core Discord use case, but built from scratch with different priorities.
 
 ### The security stuff (this is the part I'm most proud of)
 
 - Sessions expire fast (15 min) and live in memory only — no `localStorage` where scripts can grab them
-- Refresh tokens are **single-use**. If a stolen token gets replayed, RuneChat catches it instantly, kills every active session, and locks the account
+- Refresh tokens are **single-use**. If a stolen token gets replayed, Cauldron catches it instantly, kills every active session, and locks the account
 - **Compromised accounts get a visible warning badge** — your community sees it everywhere on the platform before you've even noticed something's wrong
 - Recovering a locked account requires TOTP or email verification, not just a password reset
 - Passwords get checked against the HaveIBeenPwned breach database at registration — using k-anonymity, so the full password never leaves your server. If it's been in a breach, it gets rejected before it's ever stored
@@ -38,7 +38,7 @@ Channels support spaces, capitalization, whatever. `# General Chat` instead of `
 
 ### Server succession
 
-This one's a bit unique. Every server owner can set up a **succession plan** — a designated successor (trusted admin), a backup account, and a recovery hint. The hint's answer gets communicated verbally, never typed into RuneChat. If the owner's account gets locked, the successor steps in as caretaker and can transfer ownership to the backup account after verifying identity out of band.
+This one's a bit unique. Every server owner can set up a **succession plan** — a designated successor (trusted admin), a backup account, and a recovery hint. The hint's answer gets communicated verbally, never typed into Cauldron. If the owner's account gets locked, the successor steps in as caretaker and can transfer ownership to the backup account after verifying identity out of band.
 
 No community should die because one account had a bad day.
 
@@ -84,7 +84,7 @@ If you spot something in the security model that looks off, please say so. That'
 
 ---
 
-Repo: `https://giteas.fullmooncyberworks.com/MoonRune/RuneChat`
+Repo: `https://giteas.fullmooncyberworks.com/MoonRune/Cauldron`
 Live at: `chat.moonrune.cc` (soon)
 
 Happy to answer questions!

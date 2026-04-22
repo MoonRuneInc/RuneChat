@@ -1,4 +1,4 @@
-# RuneChat Red Team Test Suite
+# Cauldron Red Team Test Suite
 
 Executable security tests covering all attack surfaces defined in the architecture spec's Red Team Testing Plan. Run these before any public deployment.
 
@@ -14,7 +14,7 @@ pip install -r requirements.txt
 pytest -v
 
 # Against a deployed instance
-RUNECHAT_TARGET=https://chat.moonrune.cc pytest -v
+CAULDRON_TARGET=https://chat.moonrune.cc pytest -v
 
 # Generate HTML report
 pytest -v --html=report.html --self-contained-html
@@ -23,7 +23,7 @@ pytest -v --html=report.html --self-contained-html
 ## Prerequisites
 
 - Python 3.11+
-- A running RuneChat backend (local Docker Compose or deployed)
+- A running Cauldron backend (local Docker Compose or deployed)
 - The backend must allow registration (set `DISABLE_REGISTRATION=false` if enforced)
 
 ## Test Categories

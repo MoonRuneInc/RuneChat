@@ -5,7 +5,7 @@ Maps to Red Team Testing Plan §12.4: Input & Injection
 
 import pytest
 import uuid
-from rtlib.client import RuneChatClient
+from rtlib.client import CauldronClient
 from rtlib import payloads
 
 
@@ -16,7 +16,7 @@ from rtlib import payloads
 def test_xss_in_username_rejected_or_neutralized(client):
     """XSS payloads in username must not execute (server rejects or escapes)."""
     for xss in payloads.XSS_PAYLOADS[:3]:
-        c = RuneChatClient(client.target)
+        c = CauldronClient(client.target)
         resp = c.session.post(f"{c.target}/api/auth/register", json={
             "username": xss,
             "email": f"rt_{hash(xss) & 0xFFFFFFFF}@redteam.local",
@@ -130,14 +130,14 @@ def test_unicode_normalization_in_username(client):
     """Unicode confusable usernames must be normalized or rejected."""
     # Register a unique baseline user so persistent local databases can rerun
     # the suite without colliding on a static username.
-    baseline = RuneChatClient(client.target)
+    baseline = CauldronClient(client.target)
     baseline.register(username=f"admin_{uuid.uuid4().hex[:8]}")
     baseline.cleanup()
 
     suffix = uuid.uuid4().hex[:8]
     for attack, desc in payloads.UNICODE_ATTACKS:
         attack_username = f"{attack}_{suffix}"
-        c = RuneChatClient(client.target)
+        c = CauldronClient(client.target)
         resp = c.session.post(f"{c.target}/api/auth/register", json={
             "username": attack_username,
             "email": f"rt_{hash(attack_username) & 0xFFFFFFFF}@redteam.local",

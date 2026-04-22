@@ -1,5 +1,5 @@
-<!-- From: /home/mystiatech/projects/cc/moonrune/RuneChat/AGENTS.md -->
-# AGENTS.md — RuneChat
+<!-- From: /home/mystiatech/projects/cc/moonrune/Cauldron/AGENTS.md -->
+# AGENTS.md — Cauldron
 
 > This file is intended for AI coding agents. It describes the current state of the project as of the last update.
 
@@ -65,9 +65,9 @@ Better decisions come from better information.
 
 ## Project Overview
 
-**RuneChat** is a FOSS, security-first chat platform intended to become a real alternative to Discord. MVP is in progress.
+**Cauldron** is a FOSS, security-first chat platform intended to become a real alternative to Discord. MVP is in progress.
 
-- **Root directory:** `/home/mystiatech/projects/cc/moonrune/RuneChat`
+- **Root directory:** `/home/mystiatech/projects/cc/moonrune/Cauldron`
 - **Current state:** Release prep for `v0.1.0` is underway. Plan 09 TrueNAS deployment artifacts are merged to GitHub `master`; rate limiting, Red Team suite, production compose, public-deployment checklist, and backend tests are Blue Team cleared. First release tags must be watched live.
 - **Deployment target:** `chat.moonrune.cc`
 
@@ -87,7 +87,7 @@ Better decisions come from better information.
 ## Project Structure
 
 ```
-RuneChat/
+Cauldron/
 ├── backend/
 │   ├── src/
 │   │   ├── api/
@@ -126,18 +126,18 @@ RuneChat/
 
 **Backend:**
 ```bash
-cargo build -p runechat-backend
+cargo build -p cauldron-backend
 # Unit tests (no DB required)
-cargo test -p runechat-backend --lib
+cargo test -p cauldron-backend --lib
 
 # Full suite including integration tests — requires a running Postgres.
 # From the host shell, override DATABASE_URL because .env points to the
 # Compose service name `db` which only resolves inside Docker:
-DATABASE_URL=postgres://runechat:runechat@localhost:5432/runechat \
-  cargo test -p runechat-backend
+DATABASE_URL=postgres://cauldron:cauldron@localhost:5432/cauldron \
+  cargo test -p cauldron-backend
 
 # Inside a Docker container (or when Compose networking is available):
-cargo test -p runechat-backend
+cargo test -p cauldron-backend
 ```
 
 **Frontend:**

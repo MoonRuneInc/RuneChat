@@ -31,10 +31,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-surface-900 gap-6">
-      <img src="/placeholder.svg" alt="RuneChat" className="w-48 h-36" />
+      <img src="/placeholder.svg" alt="Cauldron" className="w-48 h-36" />
       <div className="w-full max-w-md p-8 bg-surface-800 rounded-xl shadow-2xl">
         <h1 className="text-2xl font-bold text-ivory mb-2">Welcome back</h1>
-        <p className="text-ivory/60 text-sm mb-6">Sign in to RuneChat</p>
+        <p className="text-ivory/60 text-sm mb-6">Sign in to Cauldron</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

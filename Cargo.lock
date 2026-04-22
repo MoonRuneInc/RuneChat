@@ -682,6 +682,62 @@ dependencies = [
 ]
 
 [[package]]
+name = "cauldron"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "log",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-http",
+ "tauri-plugin-log",
+ "tauri-plugin-updater",
+ "tauri-plugin-websocket",
+]
+
+[[package]]
+name = "cauldron-backend"
+version = "0.1.0"
+dependencies = [
+ "aes-gcm",
+ "anyhow",
+ "argon2",
+ "axum",
+ "axum-extra",
+ "axum-test",
+ "base64 0.21.7",
+ "dashmap",
+ "dotenvy",
+ "futures-util",
+ "governor",
+ "hex",
+ "hmac",
+ "jsonwebtoken",
+ "lettre",
+ "rand 0.8.6",
+ "redis",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "sha1",
+ "sha2",
+ "sqlx",
+ "thiserror 1.0.69",
+ "time",
+ "tokio",
+ "totp-rs",
+ "tower 0.4.13",
+ "tower-http 0.5.2",
+ "tracing",
+ "tracing-subscriber",
+ "unicode-normalization",
+ "uuid",
+ "wiremock",
+]
+
+[[package]]
 name = "cc"
 version = "1.2.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4486,62 +4542,6 @@ dependencies = [
  "spki",
  "subtle",
  "zeroize",
-]
-
-[[package]]
-name = "runechat"
-version = "0.1.0"
-dependencies = [
- "env_logger",
- "log",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-http",
- "tauri-plugin-log",
- "tauri-plugin-updater",
- "tauri-plugin-websocket",
-]
-
-[[package]]
-name = "runechat-backend"
-version = "0.1.0"
-dependencies = [
- "aes-gcm",
- "anyhow",
- "argon2",
- "axum",
- "axum-extra",
- "axum-test",
- "base64 0.21.7",
- "dashmap",
- "dotenvy",
- "futures-util",
- "governor",
- "hex",
- "hmac",
- "jsonwebtoken",
- "lettre",
- "rand 0.8.6",
- "redis",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "sha1",
- "sha2",
- "sqlx",
- "thiserror 1.0.69",
- "time",
- "tokio",
- "totp-rs",
- "tower 0.4.13",
- "tower-http 0.5.2",
- "tracing",
- "tracing-subscriber",
- "unicode-normalization",
- "uuid",
- "wiremock",
 ]
 
 [[package]]

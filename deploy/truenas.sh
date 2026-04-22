@@ -8,17 +8,17 @@ COMPOSE=${COMPOSE:-"docker compose"}
 ENV_FILE=${ENV_FILE:-".env.prod"}
 COMPOSE_FILE=${COMPOSE_FILE:-"docker-compose.truenas.yml"}
 BUILD_COMPOSE_FILE=${BUILD_COMPOSE_FILE:-"docker-compose.truenas-build.yml"}
-APP_IMAGE=${RUNECHAT_APP_IMAGE:-"runechat-app:latest"}
-FRONTEND_IMAGE=${RUNECHAT_FRONTEND_IMAGE:-"runechat-frontend:latest"}
+APP_IMAGE=${CAULDRON_APP_IMAGE:-"cauldron-app:latest"}
+FRONTEND_IMAGE=${CAULDRON_FRONTEND_IMAGE:-"cauldron-frontend:latest"}
 
 usage() {
   cat <<'EOF'
-RuneChat TrueNAS helper
+Cauldron TrueNAS helper
 
 Usage:
   ./truenas.sh init       Create .env.prod with generated secrets
   ./truenas.sh doctor     Validate Docker, env, compose, images, and local health
-  ./truenas.sh load       Load runechat-app.tar and runechat-frontend.tar if present
+  ./truenas.sh load       Load cauldron-app.tar and cauldron-frontend.tar if present
   ./truenas.sh config     Render Docker Compose config
   ./truenas.sh up         Start self-contained deploy from pre-built images
   ./truenas.sh up-build   Build images from source; requires full repo
@@ -73,7 +73,7 @@ init_env() {
   totp_key=$(random_base64 32)
 
   cat > "$ENV_FILE" <<EOF
-# RuneChat TrueNAS deployment environment.
+# Cauldron TrueNAS deployment environment.
 # Fill DATABASE_URL before running ./truenas.sh up.
 
 DATABASE_URL=
@@ -84,8 +84,8 @@ DOMAIN=chat.moonrune.cc
 REDIS_URL=redis://redis:6379
 RUST_LOG=info
 
-RUNECHAT_APP_IMAGE=$APP_IMAGE
-RUNECHAT_FRONTEND_IMAGE=$FRONTEND_IMAGE
+CAULDRON_APP_IMAGE=$APP_IMAGE
+CAULDRON_FRONTEND_IMAGE=$FRONTEND_IMAGE
 EOF
 
   chmod 600 "$ENV_FILE"
@@ -127,18 +127,18 @@ load_images() {
   ensure_docker
   loaded=0
 
-  if [ -f runechat-app.tar ]; then
-    docker load -i runechat-app.tar
+  if [ -f cauldron-app.tar ]; then
+    docker load -i cauldron-app.tar
     loaded=1
   fi
 
-  if [ -f runechat-frontend.tar ]; then
-    docker load -i runechat-frontend.tar
+  if [ -f cauldron-frontend.tar ]; then
+    docker load -i cauldron-frontend.tar
     loaded=1
   fi
 
   if [ "$loaded" -eq 0 ]; then
-    echo "No image tarballs found. Expected runechat-app.tar and runechat-frontend.tar."
+    echo "No image tarballs found. Expected cauldron-app.tar and cauldron-frontend.tar."
   fi
 }
 
@@ -195,7 +195,7 @@ doctor() {
     exit 1
   fi
 
-  if [ -f runechat-app.tar ] || [ -f runechat-frontend.tar ]; then
+  if [ -f cauldron-app.tar ] || [ -f cauldron-frontend.tar ]; then
     echo "Image tarballs present."
   fi
 
@@ -240,7 +240,7 @@ case "$cmd" in
   up)
     ensure_docker
     require_env
-    [ -f runechat-app.tar ] || [ -f runechat-frontend.tar ] && load_images || true
+    [ -f cauldron-app.tar ] || [ -f cauldron-frontend.tar ] && load_images || true
     ensure_self_contained_images
     compose up -d
     wait_health

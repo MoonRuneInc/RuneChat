@@ -4,7 +4,7 @@ Maps to Red Team Testing Plan §12.2: Account Lockout & 2FA
 """
 
 import pytest
-from rtlib.client import RuneChatClient
+from rtlib.client import CauldronClient
 
 
 # ---------------------------------------------------------------------------
@@ -57,7 +57,7 @@ def test_stale_jwt_does_not_bypass_lockout(authed_client, victim_client):
     victim_client.refresh()
 
     # Replay old cookie
-    attacker = RuneChatClient(victim_client.target)
+    attacker = CauldronClient(victim_client.target)
     attacker.session.cookies.set("refresh_token", old_cookie, domain="", path="/api/auth/refresh")
     resp = attacker.post("/api/auth/refresh")
     assert resp.status_code == 401, f"replay did not trigger compromise: {resp.status_code}"

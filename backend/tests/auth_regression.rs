@@ -20,19 +20,19 @@ async fn stale_access_token_rejected_after_compromise(pool: PgPool) {
     .unwrap();
 
     // 2. Issue an access JWT (simulating login)
-    let config = runechat_backend::Config {
+    let config = cauldron_backend::Config {
         database_url: String::new(),
         redis_url: String::new(),
         jwt_secret: "test-secret-32-bytes-min-length!!".to_string(),
         jwt_expiry_seconds: 900,
         refresh_token_expiry_days: 7,
-        totp_issuer: "RuneChat".to_string(),
+        totp_issuer: "Cauldron".to_string(),
         totp_encryption_key: base64::engine::general_purpose::STANDARD.encode([0u8; 32]),
         domain: "localhost".to_string(),
         smtp: None,
     };
     let access_token =
-        runechat_backend::auth::tokens::encode_jwt(user_id.0, "alice", "active", &config).unwrap();
+        cauldron_backend::auth::tokens::encode_jwt(user_id.0, "alice", "active", &config).unwrap();
 
     // 3. Simulate replay detection marking the account compromised
     sqlx::query(
@@ -46,12 +46,12 @@ async fn stale_access_token_rejected_after_compromise(pool: PgPool) {
     let redis = redis::aio::ConnectionManager::new(redis_client)
         .await
         .unwrap();
-    let state = runechat_backend::AppState {
+    let state = cauldron_backend::AppState {
         db: pool.clone(),
         redis,
         config: config.clone(),
         ws_senders: std::sync::Arc::new(dashmap::DashMap::new()),
-        rate_limiters: runechat_backend::rate_limit::RateLimiters::new(),
+        rate_limiters: cauldron_backend::rate_limit::RateLimiters::new(),
         http_client: reqwest::Client::new(),
     };
 
@@ -71,7 +71,7 @@ async fn stale_access_token_rejected_after_compromise(pool: PgPool) {
 
     // 6. Attempt to extract AuthUser — must fail because DB says compromised
     let result =
-        runechat_backend::auth::middleware::AuthUser::from_request_parts(&mut parts, &state).await;
+        cauldron_backend::auth::middleware::AuthUser::from_request_parts(&mut parts, &state).await;
 
     assert!(
         result.is_err(),

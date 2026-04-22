@@ -1,17 +1,17 @@
-# RuneChat TrueNAS SCALE Deploy
+# Cauldron TrueNAS SCALE Deploy
 
 This directory is the TrueNAS deployment bundle. The easiest path is:
 
 ```bash
-git clone https://github.com/MoonRuneInc/RuneChat.git
-cd RuneChat/deploy
+git clone https://github.com/MoonRuneInc/Cauldron.git
+cd Cauldron/deploy
 ./truenas.sh init
 ```
 
 Edit `.env.prod`, fill `DATABASE_URL`, confirm `DOMAIN`, then choose one start mode:
 
 ```bash
-# If runechat-app.tar and runechat-frontend.tar are in deploy/
+# If cauldron-app.tar and cauldron-frontend.tar are in deploy/
 ./truenas.sh up
 
 # If you cloned the full repo and want TrueNAS to build the images
@@ -47,7 +47,7 @@ Run from `deploy/`:
 |---|---|
 | `./truenas.sh init` | Create `.env.prod`, generate `JWT_SECRET`, generate `TOTP_ENCRYPTION_KEY` |
 | `./truenas.sh doctor` | Validate Docker, env, compose config, images, and health |
-| `./truenas.sh load` | Load `runechat-app.tar` and `runechat-frontend.tar` if present |
+| `./truenas.sh load` | Load `cauldron-app.tar` and `cauldron-frontend.tar` if present |
 | `./truenas.sh up` | Start the self-contained pre-built image deployment |
 | `./truenas.sh up-build` | Build from source and start; requires full repo clone |
 | `./truenas.sh status` | Show container status |
@@ -75,14 +75,14 @@ TOTP_ENCRYPTION_KEY=<generated>
 DOMAIN=chat.moonrune.cc
 REDIS_URL=redis://redis:6379
 RUST_LOG=info
-RUNECHAT_APP_IMAGE=runechat-app:latest
-RUNECHAT_FRONTEND_IMAGE=runechat-frontend:latest
+CAULDRON_APP_IMAGE=cauldron-app:latest
+CAULDRON_FRONTEND_IMAGE=cauldron-frontend:latest
 ```
 
 Fill:
 
 - `DATABASE_URL`: managed Postgres connection string, for example Neon:
-  `postgresql://<user>:<pass>@<host>.neon.tech/runechat?sslmode=require`
+  `postgresql://<user>:<pass>@<host>.neon.tech/cauldron?sslmode=require`
 - `DOMAIN`: public hostname, for example `chat.moonrune.cc`
 
 Leave `REDIS_URL` alone unless you are running Redis outside this compose stack.
@@ -94,11 +94,11 @@ Leave `REDIS_URL` alone unless you are running Redis outside this compose stack.
 Use this when you have image tarballs:
 
 ```bash
-cd RuneChat/deploy
+cd Cauldron/deploy
 ./truenas.sh init
 # edit .env.prod
-cp /path/to/runechat-app.tar .
-cp /path/to/runechat-frontend.tar .
+cp /path/to/cauldron-app.tar .
+cp /path/to/cauldron-frontend.tar .
 ./truenas.sh up
 ```
 
@@ -109,8 +109,8 @@ The script loads tarballs automatically if they are present.
 Use this when the full repo is present on TrueNAS:
 
 ```bash
-git clone https://github.com/MoonRuneInc/RuneChat.git
-cd RuneChat/deploy
+git clone https://github.com/MoonRuneInc/Cauldron.git
+cd Cauldron/deploy
 ./truenas.sh init
 # edit .env.prod
 ./truenas.sh up-build
@@ -124,8 +124,8 @@ Use `docker-compose.truenas-custom-app.yml` only when you want to paste compose 
 
 You must provide:
 
-- `RUNECHAT_APP_IMAGE`
-- `RUNECHAT_FRONTEND_IMAGE`
+- `CAULDRON_APP_IMAGE`
+- `CAULDRON_FRONTEND_IMAGE`
 - `DATABASE_URL`
 - `JWT_SECRET`
 - `TOTP_ENCRYPTION_KEY`
@@ -148,7 +148,7 @@ Authenticate and create the tunnel:
 
 ```bash
 cloudflared tunnel login
-cloudflared tunnel create runechat
+cloudflared tunnel create cauldron
 ```
 
 Edit `cloudflared-config.yml`, replace `<TUNNEL-ID>`, then install it:
@@ -156,7 +156,7 @@ Edit `cloudflared-config.yml`, replace `<TUNNEL-ID>`, then install it:
 ```bash
 mkdir -p ~/.cloudflared
 cp cloudflared-config.yml ~/.cloudflared/config.yml
-cloudflared tunnel route dns runechat chat.moonrune.cc
+cloudflared tunnel route dns cauldron chat.moonrune.cc
 cloudflared service install
 systemctl enable cloudflared
 systemctl start cloudflared
@@ -212,7 +212,7 @@ nano .env.prod
 
 Fill the managed Postgres connection string.
 
-### Missing `runechat-app:latest`
+### Missing `cauldron-app:latest`
 
 Use one of these:
 

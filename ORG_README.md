@@ -23,7 +23,7 @@ We care about transparency, security, and giving communities real control over t
 
 ## 🚀 Projects
 
-### 🌙 [RuneChat](https://giteas.fullmooncyberworks.com/MoonRune/RuneChat)
+### 🌙 [Cauldron](https://giteas.fullmooncyberworks.com/MoonRune/Cauldron)
 
 > *A FOSS Discord alternative that respects your community.*
 

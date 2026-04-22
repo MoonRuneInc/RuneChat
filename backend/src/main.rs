@@ -3,7 +3,7 @@ use axum::http::{header, HeaderName, HeaderValue};
 use dashmap::DashMap;
 use redis::aio::ConnectionManager;
 use reqwest;
-use runechat_backend::{api, config::Config, rate_limit::RateLimiters, state::AppState};
+use cauldron_backend::{api, config::Config, rate_limit::RateLimiters, state::AppState};
 use sqlx::postgres::PgPoolOptions;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -40,7 +40,7 @@ async fn main() -> anyhow::Result<()> {
     let redis = ConnectionManager::new(redis_client).await?;
 
     let http_client = reqwest::Client::builder()
-        .user_agent("RuneChat/1.0 (pwned-password-check)")
+        .user_agent("Cauldron/1.0 (pwned-password-check)")
         .build()
         .expect("failed to build HTTP client");
 
@@ -55,7 +55,7 @@ async fn main() -> anyhow::Result<()> {
 
     let broker_state = state.clone();
     tokio::spawn(async move {
-        runechat_backend::realtime::broker::run(
+        cauldron_backend::realtime::broker::run(
             broker_state.config.redis_url,
             broker_state.db,
             broker_state.ws_senders,

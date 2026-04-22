@@ -126,7 +126,7 @@ jobs:
           token = os.environ['TOKEN']
           req = urllib.request.Request(
               f"{api_url}/repos/{repo}/releases",
-              data=json.dumps({"tag_name": tag, "name": f"RuneChat {tag}", "body": f"Release {tag}"}).encode(),
+              data=json.dumps({"tag_name": tag, "name": f"Cauldron {tag}", "body": f"Release {tag}"}).encode(),
               headers={"Authorization": f"token {token}", "Content-Type": "application/json"},
               method="POST"
           )

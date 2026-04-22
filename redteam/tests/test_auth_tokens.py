@@ -6,7 +6,7 @@ Maps to Red Team Testing Plan §12.1: Authentication & Tokens
 import time
 import pytest
 import requests
-from rtlib.client import RuneChatClient
+from rtlib.client import CauldronClient
 from rtlib import jwt_tools
 
 
@@ -84,7 +84,7 @@ def test_refresh_token_is_httpOnly(authed_client):
     # The register response should have included the cookie.
     # We need to inspect the original register response.
     # Re-register to check.
-    c2 = RuneChatClient(authed_client.target)
+    c2 = CauldronClient(authed_client.target)
     reg_resp = c2.session.post(f"{c2.target}/api/auth/register", json={
         "username": f"rt_cookie_{int(time.time())}",
         "email": f"rt_{int(time.time())}@redteam.local",
@@ -109,7 +109,7 @@ def test_refresh_token_replay_kills_sessions(authed_client):
     assert "access_token" in resp1
 
     # Steal the OLD cookie and replay it in a new session
-    c2 = RuneChatClient(authed_client.target)
+    c2 = CauldronClient(authed_client.target)
     c2.session.cookies.set("refresh_token", cookie, domain="", path="/api/auth/refresh")
     resp2 = c2.post("/api/auth/refresh")
 
@@ -147,7 +147,7 @@ def test_refresh_cookie_samesite_strict():
     """Refresh cookie path must enforce SameSite=Strict."""
     # This is validated by test_refresh_token_is_httpOnly above,
     # but we also verify the cookie scope is tight.
-    c = RuneChatClient()
+    c = CauldronClient()
     c.register()
     cookie = c.session.cookies.get("refresh_token")
     assert cookie
@@ -170,7 +170,7 @@ def test_refresh_cookie_samesite_strict():
 def test_login_brute_force_is_rate_limited(client):
     """Repeated failed logins must be rate limited or account-locked."""
     # Create a victim account
-    victim = RuneChatClient(client.target)
+    victim = CauldronClient(client.target)
     victim.register(password="SuperSecret123!")
     username = victim.username
 
@@ -198,7 +198,7 @@ def test_login_brute_force_is_rate_limited(client):
 @pytest.mark.slow
 def test_credential_stuffing_simulation(client):
     """Many login attempts with common passwords should trigger defenses."""
-    victim = RuneChatClient(client.target)
+    victim = CauldronClient(client.target)
     victim.register(password="password123")
     username = victim.username
 

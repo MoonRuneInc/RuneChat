@@ -4,13 +4,13 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 
-APP_IMAGE=${RUNECHAT_APP_IMAGE:-"runechat-app:latest"}
-FRONTEND_IMAGE=${RUNECHAT_FRONTEND_IMAGE:-"runechat-frontend:latest"}
+APP_IMAGE=${CAULDRON_APP_IMAGE:-"cauldron-app:latest"}
+FRONTEND_IMAGE=${CAULDRON_FRONTEND_IMAGE:-"cauldron-frontend:latest"}
 OUT_DIR=${OUT_DIR:-"$SCRIPT_DIR"}
 
 usage() {
   cat <<'EOF'
-RuneChat TrueNAS image builder
+Cauldron TrueNAS image builder
 
 Builds the backend and frontend Docker images, then exports them as tarballs
 for transfer to a TrueNAS host.
@@ -19,13 +19,13 @@ Usage:
   ./deploy/build-truenas-images.sh
 
 Optional environment variables:
-  RUNECHAT_APP_IMAGE=runechat-app:latest
-  RUNECHAT_FRONTEND_IMAGE=runechat-frontend:latest
+  CAULDRON_APP_IMAGE=cauldron-app:latest
+  CAULDRON_FRONTEND_IMAGE=cauldron-frontend:latest
   OUT_DIR=deploy
 
 Outputs:
-  runechat-app.tar
-  runechat-frontend.tar
+  cauldron-app.tar
+  cauldron-frontend.tar
 EOF
 }
 
@@ -42,7 +42,7 @@ require_docker() {
 
 require_repo() {
   if [ ! -f "$REPO_ROOT/backend/Dockerfile" ] || [ ! -f "$REPO_ROOT/frontend/Dockerfile" ]; then
-    echo "ERROR: this script must live inside the full RuneChat repo." >&2
+    echo "ERROR: this script must live inside the full Cauldron repo." >&2
     echo "Expected backend/Dockerfile and frontend/Dockerfile next to deploy/." >&2
     exit 1
   fi
@@ -72,11 +72,11 @@ docker build -t "$APP_IMAGE" -f "$REPO_ROOT/backend/Dockerfile" "$REPO_ROOT"
 echo "Building frontend image: $FRONTEND_IMAGE"
 docker build -t "$FRONTEND_IMAGE" -f "$REPO_ROOT/frontend/Dockerfile" "$REPO_ROOT/frontend"
 
-echo "Exporting $APP_IMAGE to $OUT_DIR/runechat-app.tar"
-docker save "$APP_IMAGE" -o "$OUT_DIR/runechat-app.tar"
+echo "Exporting $APP_IMAGE to $OUT_DIR/cauldron-app.tar"
+docker save "$APP_IMAGE" -o "$OUT_DIR/cauldron-app.tar"
 
-echo "Exporting $FRONTEND_IMAGE to $OUT_DIR/runechat-frontend.tar"
-docker save "$FRONTEND_IMAGE" -o "$OUT_DIR/runechat-frontend.tar"
+echo "Exporting $FRONTEND_IMAGE to $OUT_DIR/cauldron-frontend.tar"
+docker save "$FRONTEND_IMAGE" -o "$OUT_DIR/cauldron-frontend.tar"
 
 echo "TrueNAS image bundle created:"
-ls -lh "$OUT_DIR/runechat-app.tar" "$OUT_DIR/runechat-frontend.tar"
+ls -lh "$OUT_DIR/cauldron-app.tar" "$OUT_DIR/cauldron-frontend.tar"

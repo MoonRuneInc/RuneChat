@@ -1,4 +1,4 @@
-# RuneChat — Production Deployment Commands
+# Cauldron — Production Deployment Commands
 #
 # These targets wrap docker compose with COMPOSE_ENV_FILES=.env.prod so the
 # production stack can never accidentally pick up the development .env file.

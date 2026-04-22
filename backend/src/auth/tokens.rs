@@ -75,7 +75,7 @@ mod tests {
             jwt_secret: "test-secret-32-bytes-min-length!!".to_string(),
             jwt_expiry_seconds: 900,
             refresh_token_expiry_days: 7,
-            totp_issuer: "RuneChat".to_string(),
+            totp_issuer: "Cauldron".to_string(),
             totp_encryption_key: base64::engine::general_purpose::STANDARD.encode([0u8; 32]),
             domain: "localhost".to_string(),
             smtp: None,

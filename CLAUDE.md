@@ -27,7 +27,7 @@ After completing work, update the vault files accordingly. The vault is the sour
 
 ---
 
-## Project: RuneChat
+## Project: Cauldron
 
 A FOSS, security-first chat platform and Discord alternative, deployed under the MoonRune brand at `chat.moonrune.cc`.
 
@@ -58,7 +58,7 @@ A FOSS, security-first chat platform and Discord alternative, deployed under the
 | Operating rules | `/mnt/d/Vaults/OfficeVault/00_System/Operating_Rules.md` |
 | Workflow | `/mnt/d/Vaults/OfficeVault/00_System/Workflow.md` |
 | Your agent file | `/mnt/d/Vaults/OfficeVault/01_Agents/Iris_Vale.md` |
-| RuneChat project files | `/mnt/d/Vaults/OfficeVault/02_Projects/RuneChat/` |
+| Cauldron project files | `/mnt/d/Vaults/OfficeVault/02_Projects/RuneChat/` |
 
 ---
 

@@ -1,4 +1,4 @@
-# RuneChat — TrueNAS SCALE Docker Compose (VM deployment, self-contained)
+# Cauldron — TrueNAS SCALE Docker Compose (VM deployment, self-contained)
 #
 # Copy this file, .env.prod, and prod.conf to the TrueNAS host, then run:
 #   docker compose --env-file .env.prod -f docker-compose.truenas.yml up -d
@@ -23,7 +23,7 @@ services:
       retries: 3
 
   app:
-    image: ${RUNECHAT_APP_IMAGE:-runechat-app:latest}
+    image: ${CAULDRON_APP_IMAGE:-cauldron-app:latest}
     restart: unless-stopped
     env_file: .env.prod
     environment:
@@ -45,7 +45,7 @@ services:
       retries: 3
 
   frontend:
-    image: ${RUNECHAT_FRONTEND_IMAGE:-runechat-frontend:latest}
+    image: ${CAULDRON_FRONTEND_IMAGE:-cauldron-frontend:latest}
     restart: unless-stopped
     expose:
       - "80"

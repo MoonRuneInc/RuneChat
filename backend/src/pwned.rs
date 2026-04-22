@@ -90,7 +90,7 @@ mod tests {
         let mock_server = MockServer::start().await;
         let hash = format!(
             "{:X}",
-            Sha1::digest(b"this-is-a-unique-runechat-test-password-42")
+            Sha1::digest(b"this-is-a-unique-cauldron-test-password-42")
         );
         let prefix = &hash[..5];
 
@@ -107,7 +107,7 @@ mod tests {
         let client = reqwest::Client::new();
         let result = check_password_with_base_url(
             &client,
-            "this-is-a-unique-runechat-test-password-42",
+            "this-is-a-unique-cauldron-test-password-42",
             &mock_server.uri(),
         )
         .await;
