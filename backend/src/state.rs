@@ -14,4 +14,5 @@ pub struct AppState {
     pub config: Config,
     pub ws_senders: Arc<DashMap<Uuid, mpsc::UnboundedSender<String>>>,
     pub rate_limiters: RateLimiters,
+    pub http_client: reqwest::Client,
 }

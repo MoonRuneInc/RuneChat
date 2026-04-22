@@ -12,6 +12,7 @@ use uuid::Uuid;
 use crate::{
     auth::{middleware::AuthUser, password, tokens, totp},
     error::AppError,
+    pwned::{self, PwnedCheckResult},
     state::AppState,
 };
 
@@ -113,6 +114,21 @@ async fn register(
     }
     if body.password.len() < 8 {
         return Err(AppError::BadRequest("password must be at least 8 characters".to_string()));
+    }
+
+    match pwned::check_password(&state.http_client, &body.password).await {
+        PwnedCheckResult::Pwned { count } => {
+            return Err(AppError::BadRequest(format!(
+                "This password has appeared in {} known data breach{}. \
+                 Please choose a different password.",
+                count,
+                if count == 1 { "" } else { "es" }
+            )));
+        }
+        PwnedCheckResult::ServiceUnavailable => {
+            return Err(AppError::ServiceUnavailable);
+        }
+        PwnedCheckResult::Clean => {}
     }
 
     let password_hash = password::hash(&body.password)?;

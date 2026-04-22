@@ -1,4 +1,5 @@
 use runechat_backend::{api, config::Config, rate_limit::RateLimiters, state::AppState};
+use reqwest;
 use sqlx::postgres::PgPoolOptions;
 use redis::aio::ConnectionManager;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -31,12 +32,18 @@ async fn main() -> anyhow::Result<()> {
     let redis_client = redis::Client::open(config.redis_url.clone())?;
     let redis = ConnectionManager::new(redis_client).await?;
 
+    let http_client = reqwest::Client::builder()
+        .user_agent("RuneChat/1.0 (pwned-password-check)")
+        .build()
+        .expect("failed to build HTTP client");
+
     let state = AppState {
         db: db.clone(),
         redis,
         config: config.clone(),
         ws_senders: Arc::new(DashMap::new()),
         rate_limiters: RateLimiters::new(),
+        http_client,
     };
 
     // Start Redis broker as a background task
