@@ -1,0 +1,17 @@
+# Cloudflare Tunnel configuration for RuneChat
+#
+# Place at ~/.cloudflared/config.yml on the TrueNAS host.
+# Replace <TUNNEL-ID> with the UUID returned by:
+#   cloudflared tunnel create runechat
+
+tunnel: <TUNNEL-ID>
+credentials-file: /root/.cloudflared/<TUNNEL-ID>.json
+
+ingress:
+  - hostname: chat.moonrune.cc
+    service: http://localhost:8080
+    originRequest:
+      # Cloudflare Tunnel connects to the nginx proxy on localhost.
+      # The proxy handles all routing (/api/, /ws, /health, /).
+      noTLSVerify: true
+  - service: http_status:404

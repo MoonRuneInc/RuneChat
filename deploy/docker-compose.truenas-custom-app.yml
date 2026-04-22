@@ -1,0 +1,71 @@
+# RuneChat — TrueNAS SCALE Custom App (pre-built images)
+#
+# For TrueNAS SCALE 24.04+ Custom Apps.
+# Images must be pre-built and available to TrueNAS (e.g., loaded via
+# docker load, pulled from GHCR, or built on TrueNAS beforehand).
+#
+# Environment variables are injected by the TrueNAS Apps UI — do not
+# bind-mount .env.prod when using Custom Apps.
+
+services:
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  app:
+    image: ${RUNECHAT_APP_IMAGE:?RUNECHAT_APP_IMAGE is required}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?required}
+      JWT_SECRET: ${JWT_SECRET:?required}
+      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY:?required}
+      DOMAIN: ${DOMAIN:?required}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      RUST_LOG: ${RUST_LOG:-info}
+    expose:
+      - "3000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    image: ${RUNECHAT_FRONTEND_IMAGE:?RUNECHAT_FRONTEND_IMAGE is required}
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - app
+
+  proxy:
+    image: nginx:1.30-alpine-slim
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - type: bind
+        source: ${NGINX_CONFIG_PATH:?NGINX_CONFIG_PATH is required}
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
+    depends_on:
+      - app
+      - frontend
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  redis_data:
