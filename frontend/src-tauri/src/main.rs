@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-  cauldron_lib::run();
+    cauldron_lib::run();
 }
