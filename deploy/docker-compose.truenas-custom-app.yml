@@ -1,13 +1,27 @@
-# Cauldron — TrueNAS SCALE Custom App (pre-built images)
+# Cauldron — TrueNAS SCALE Custom App
 #
-# For TrueNAS SCALE 24.04+ Custom Apps.
-# Images must be pre-built and available to TrueNAS (e.g., loaded via
-# docker load, pulled from GHCR, or built on TrueNAS beforehand).
+# For TrueNAS SCALE 24.04+ Custom Apps (install via YAML).
+# Paste this file directly into the YAML field in the TrueNAS Custom App UI.
 #
-# Environment variables are injected by the TrueNAS Apps UI — do not
-# bind-mount .env.prod when using Custom Apps.
+# Before pasting, replace all REPLACE_* placeholders with real values.
+# Do NOT commit this file to git after filling in secrets.
 
 services:
+  db:
+    image: mystiatech/cauldron-db:latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cauldron
+      POSTGRES_PASSWORD: REPLACE_DB_PASSWORD
+      POSTGRES_DB: cauldron
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cauldron"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   redis:
     image: redis:8-alpine
     restart: unless-stopped
@@ -20,18 +34,20 @@ services:
       retries: 3
 
   app:
-    image: ${CAULDRON_APP_IMAGE:?CAULDRON_APP_IMAGE is required}
+    image: mystiatech/cauldron-app:latest
     restart: unless-stopped
     environment:
-      DATABASE_URL: ${DATABASE_URL:?required}
-      JWT_SECRET: ${JWT_SECRET:?required}
-      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY:?required}
-      DOMAIN: ${DOMAIN:?required}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      RUST_LOG: ${RUST_LOG:-info}
+      DATABASE_URL: postgres://cauldron:REPLACE_DB_PASSWORD@db:5432/cauldron
+      JWT_SECRET: REPLACE_JWT_SECRET
+      TOTP_ENCRYPTION_KEY: REPLACE_TOTP_ENCRYPTION_KEY
+      DOMAIN: chat.moonrune.cc
+      REDIS_URL: redis://redis:6379
+      RUST_LOG: info
     expose:
       - "3000"
     depends_on:
+      db:
+        condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
@@ -41,7 +57,7 @@ services:
       retries: 3
 
   frontend:
-    image: ${CAULDRON_FRONTEND_IMAGE:?CAULDRON_FRONTEND_IMAGE is required}
+    image: mystiatech/cauldron-frontend:latest
     restart: unless-stopped
     expose:
       - "80"
@@ -52,10 +68,10 @@ services:
     image: nginx:1.30-alpine-slim
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8080:80"
+      - "8080:80"
     volumes:
       - type: bind
-        source: ${NGINX_CONFIG_PATH:?NGINX_CONFIG_PATH is required}
+        source: /mnt/plex_pool/cauldron/prod.conf
         target: /etc/nginx/conf.d/default.conf
         read_only: true
     depends_on:
@@ -68,4 +84,5 @@ services:
       retries: 3
 
 volumes:
+  db_data:
   redis_data:
