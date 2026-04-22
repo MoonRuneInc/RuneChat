@@ -1,186 +1,195 @@
-# RuneChat
+<div align="center">
+
+# 🌙 RuneChat
 
 **A community chat platform that respects you.**
 
-RuneChat is a free, open-source alternative to Discord — built under the [MoonRune](https://moonrune.cc) brand and designed around transparency, security, and community control from day one.
+*Free. Open source. Security-first. Built under the [MoonRune](https://moonrune.cc) brand.*
 
-> Deploying at `chat.moonrune.cc`
+[![Rust](https://img.shields.io/badge/backend-Rust-orange?style=flat-square&logo=rust)](https://www.rust-lang.org/)
+[![React](https://img.shields.io/badge/frontend-React-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![Tauri](https://img.shields.io/badge/desktop-Tauri_v2-FFC131?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
+[![PostgreSQL](https://img.shields.io/badge/database-PostgreSQL_16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/deploy-Docker_Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![License](https://img.shields.io/badge/license-FOSS-green?style=flat-square)](#license)
+
+> 🚀 Deploying at [`chat.moonrune.cc`](https://chat.moonrune.cc)
+
+</div>
 
 ---
 
-## What you can do
+## 💬 What is RuneChat?
 
-- **Create a server** and invite your community with a shareable link
-- **Organize conversations** into named channels — with spaces, capitalization, and real formatting, not `#forced-lowercase-slugs`
-- **Chat in real time** with full message history and live delivery
-- **Stay secure** — your session is protected against hijacking and account takeover by default
-- **Take it with you** — native desktop app (Windows, macOS, Linux), Android, and a standard web build, all from the same codebase
+RuneChat is a free, open-source alternative to Discord built around three principles: **transparency**, **security**, and **community control**. No dark patterns. No opaque algorithms deciding who sees your server. No account incidents silently locking your community out.
 
 ---
 
-## Governance
+## ✨ Features
 
-RuneChat gives communities meaningful control over their own spaces. Every server has a clear, transparent role structure — and the platform is designed to grow into full community self-governance over time.
+### 💬 Messaging
+- **Real-time chat** with full message history and live delivery
+- **Flexible channel names** — spaces, capitalization, readable formatting. Not `#forced-lowercase-slugs`
+- **Native apps** — Windows, macOS, Linux, and Android from a single Tauri codebase, plus a standard web build
 
-### Server roles
+### 🏘️ Community
+- **Server-controlled invites** — generate links with optional expiry and use limits, revoke any time
+- **Transparent roles** — Owner, Admin, Member. Explicit, visible, no hidden permission layers
+- **Invite-only by default** — no algorithm deciding who finds your community
 
-Every server has three roles:
+### 🔒 Security
+- **Short-lived sessions** — access tokens expire in 15 minutes, stored in memory only, never `localStorage`
+- **Replay attack detection** — refresh tokens are single-use and rotate. A replayed stolen token triggers immediate full session invalidation
+- **Visible compromise warnings** — if a takeover is detected, a warning badge appears on the username platform-wide so your community knows
+- **2FA-gated recovery** — unlocking a compromised account requires TOTP or email verification, not just a password reset
+- **Encrypted 2FA secrets** — TOTP secrets are encrypted at rest with AES-256-GCM
 
-| Role | Who | What they can do |
-|---|---|---|
-| **Owner** | The person who created the server | Full control — manage members, promote admins, configure the server |
-| **Admin** | Members promoted by the owner | Manage members and channels, moderate conversations |
-| **Member** | Everyone else | Read and participate in channels they have access to |
+### 🏛️ Governance
+- **Server succession (deadman protocol)** — servers don't die because an owner's account gets locked. Configure a designated successor and backup account in server settings
+- **Roadmap:** moderation tooling, community voting, and platform governance — scoped and architecturally planned, not vague aspirations
 
-Roles are explicit and visible. There are no hidden permission layers or opaque flags — if you have a role, you know what it means.
+---
 
-### Invite system
+## 🔑 Server Succession
 
-Invites are controlled by the server, not by the platform. Owners and admins can:
-- Generate invite links with optional expiry times
-- Set a maximum number of uses per link
-- Revoke links at any time
+Every server owner can configure a **succession plan**:
 
-There is no algorithm deciding who sees your server. Access is invite-only by default.
+| Setting | Purpose |
+|---|---|
+| 👤 **Designated successor** | A trusted admin who takes over management if the owner is locked out |
+| 🔁 **Backup account** | A second account the owner controls — successor can transfer ownership here |
+| 🗝️ **Recovery hint** | A question whose answer is communicated verbally, never stored in RuneChat |
 
-### Server succession (deadman protocol)
+> ⚠️ The answer to the recovery hint is **never entered into RuneChat**. Tell your designated successor in person or over a voice call. If someone claims to have recovered your account, the successor asks them the question out of band before proceeding.
 
-Servers shouldn't die because an owner's account gets locked.
-
-Every server owner can configure a **succession plan** in server settings:
-
-- **Designated successor** — a trusted admin who takes over management if the owner is locked out
-- **Backup account** — a second account the owner personally controls, which the successor can transfer ownership to during recovery
-- **Recovery hint** — a short question the owner sets in the app. The answer is **never entered into RuneChat** — the owner tells it to their designated successor verbally, in person or over a phone call. When the successor needs to transfer ownership, they ask the backup account holder the question out of band before proceeding.
-
-> "Tell your designated successor the answer in person or over a voice call — never in a message. If someone claims to have recovered your account, your successor can ask them the question to confirm it's really you."
-
-When a succession event is triggered (account compromised or suspended):
-1. The owner is locked from server management actions — they can still read and send messages
-2. The designated successor becomes acting caretaker and can manage the server
-3. The successor can initiate an ownership transfer to the pre-registered backup account once they've verified identity out of band
-4. When the original owner recovers their account, the succession event closes and they regain full control
+When a succession event triggers:
+1. 🔐 Owner is locked from server management (can still read and chat)
+2. 🛡️ Designated successor becomes acting caretaker
+3. 🔄 Successor initiates ownership transfer to the backup account after out-of-band identity verification
+4. ✅ Owner recovers their account → succession event closes, full control restored
 
 No community should be held hostage to an account incident.
 
-### Roadmap: community governance
-
-The current role system is the foundation. Future milestones will add:
-
-- **Moderation tooling** — transparent audit logs, member appeals, visible moderation history
-- **Community voting** — structured proposals and votes for server decisions (rule changes, promotions, bans)
-- **Platform governance** — RuneChat itself will adopt transparent governance for roadmap and policy decisions
-
-These features are planned and scoped — not vague aspirations. The architecture is designed so they layer in cleanly without rearchitecting the core.
-
 ---
 
-## Security
+## 🚀 Self-hosting
 
-RuneChat treats your account security as a design requirement, not an afterthought.
-
-- **Sessions expire quickly.** Access tokens live for 15 minutes, in memory only — never written to `localStorage` where a script could steal them.
-- **Session theft is detectable.** Refresh tokens are single-use and rotate on every use. If a stolen token is replayed, RuneChat detects it immediately, kills all active sessions, and locks the account.
-- **Compromised accounts are visible.** If a takeover is detected, a warning badge appears on the username everywhere on the platform — so your community knows your account may not be under your control while you're recovering it.
-- **Recovery requires proof of identity.** Unlocking a compromised account requires TOTP (authenticator app) or email verification — not just a password reset.
-- **2FA secrets are encrypted.** TOTP secrets are encrypted at rest with AES-256-GCM, not just hashed.
-
----
-
-## Self-hosting
-
-RuneChat runs as a single `docker compose up` and is designed to be self-hosted.
+RuneChat is designed to self-host. One command gets you running.
 
 ### Requirements
 
 - Docker and Docker Compose
-- A domain and TLS termination (for production)
-- A managed PostgreSQL instance (for production — see below)
+- A domain with TLS termination (for production)
 
 ### Quick start
 
 ```bash
-# 1. Clone the repo and copy the env template
+# 1. Clone and configure
 git clone https://giteas.fullmooncyberworks.com/MoonRune/RuneChat.git
 cd RuneChat
 cp .env.example .env
 
-# 2. Generate secrets (paste results into .env)
+# 2. Generate secrets
 openssl rand -hex 64        # → JWT_SECRET
 openssl rand -base64 32     # → TOTP_ENCRYPTION_KEY
 
-# 3. Start everything
+# 3. Start
 docker compose up --build
 ```
 
-App available at **http://localhost:8080**.
+App available at **http://localhost:8080** 🎉
 
 ### Environment variables
 
-| Variable | Required | Notes |
+| Variable | Required | Description |
 |---|---|---|
-| `JWT_SECRET` | Yes | `openssl rand -hex 64` |
-| `TOTP_ENCRYPTION_KEY` | Yes | `openssl rand -base64 32` |
-| `DATABASE_URL` | Yes | Pre-filled for local compose; use a managed DB for production |
-| `REDIS_URL` | Yes | Pre-filled for local compose |
-| `SMTP_HOST` / `SMTP_*` | No | Required for email OTP account unlock fallback |
+| `JWT_SECRET` | ✅ | `openssl rand -hex 64` |
+| `TOTP_ENCRYPTION_KEY` | ✅ | `openssl rand -base64 32` |
+| `DATABASE_URL` | ✅ | Pre-filled for local compose |
+| `REDIS_URL` | ✅ | Pre-filled for local compose |
+| `SMTP_HOST` / `SMTP_*` | ➖ | Email OTP fallback for account unlock |
 
 See `.env.example` for full documentation.
 
 ### Production notes
 
-- The bundled PostgreSQL image (`postgres:16-alpine`) is suitable for local development and internal use. For production, use a managed PostgreSQL service (Neon, Supabase, Railway, or RDS) and set `DATABASE_URL` accordingly.
-- The `nginx/` directory contains a dev reverse proxy config. Replace with your own TLS-terminating config before exposing to the internet.
+- The bundled `postgres:16-alpine` is suitable for local and internal use. For public production, use a managed PostgreSQL service or a dedicated container with persistent storage.
+- Place a TLS-terminating reverse proxy (nginx, Caddy, or Zoxary) in front of port 8080 before exposing to the internet.
+- ⚠️ Enable **WebSocket support** in your reverse proxy — required for real-time messaging.
+
+### 🖥️ Deploying on TrueNAS SCALE
+
+Running TrueNAS SCALE 24.10 or later? See the dedicated guide:
+**[docs/deploy-truenas.md](docs/deploy-truenas.md)**
 
 ---
 
-## Contributing
+## 🛠️ Contributing
 
 ### Tech stack
 
 | Layer | Technology |
 |---|---|
-| Backend | Rust · Axum · SQLx · Tokio |
-| Frontend | TypeScript · React · Vite · Zustand · TanStack Query |
-| Database | PostgreSQL 16 |
-| Real-time | Redis pub/sub |
-| Desktop / Mobile | Tauri v2 |
-| Deployment | Docker Compose · Nginx |
+| ⚙️ Backend | Rust · Axum · SQLx · Tokio |
+| 🎨 Frontend | TypeScript · React · Vite · Zustand · TanStack Query |
+| 🗄️ Database | PostgreSQL 16 |
+| ⚡ Real-time | Redis pub/sub |
+| 🖥️ Desktop / Mobile | Tauri v2 |
+| 🐳 Deployment | Docker Compose · Nginx |
 
 ### Development workflow
 
 ```bash
-# Backend only (start DB and Redis first)
+# Start dependencies
 docker compose up -d db redis
+
+# Backend
 cd backend && cargo run
 
-# Backend tests
+# Backend tests (requires running DB)
 cd backend && cargo test
 
-# Frontend only
+# Frontend
 cd frontend && npm install && npm run dev
 ```
 
-### API
+### 📡 API reference
 
-| Endpoint | Description |
-|---|---|
-| `POST /api/auth/register` | Create account |
-| `POST /api/auth/login` | Log in |
-| `POST /api/auth/refresh` | Rotate session |
-| `POST /api/auth/logout` | Log out |
-| `POST /api/auth/totp/enroll` | Set up authenticator app |
-| `POST /api/auth/unlock/totp` | Unlock compromised account via TOTP |
-| `POST /api/auth/unlock/email-otp/*` | Unlock via email OTP |
-| `GET/POST /api/servers` | List / create servers |
-| `GET/POST /api/servers/:id/invites` | Manage invites |
-| `POST /api/invites/:code/join` | Join via invite |
-| `GET/POST /api/channels` | Channels |
-| `GET/POST /api/messages` | Message history / send |
-| `GET /ws` | WebSocket — real-time messaging |
+<details>
+<summary>🔐 Auth</summary>
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/auth/register` | Create account |
+| `POST` | `/api/auth/login` | Log in |
+| `POST` | `/api/auth/refresh` | Rotate session |
+| `POST` | `/api/auth/logout` | Log out |
+| `POST` | `/api/auth/totp/enroll` | Set up authenticator app |
+| `POST` | `/api/auth/unlock/totp` | Unlock compromised account via TOTP |
+| `POST` | `/api/auth/unlock/email-otp/*` | Unlock via email OTP |
+
+</details>
+
+<details>
+<summary>🏘️ Servers, Channels & Messages</summary>
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/servers` | List servers |
+| `POST` | `/api/servers` | Create server |
+| `GET` | `/api/servers/:id/invites` | List invites |
+| `POST` | `/api/servers/:id/invites` | Create invite |
+| `POST` | `/api/invites/:code/join` | Join via invite |
+| `GET` | `/api/channels` | List channels |
+| `POST` | `/api/channels` | Create channel |
+| `GET` | `/api/messages` | Message history |
+| `POST` | `/api/messages` | Send message |
+| `GET` | `/ws` | WebSocket — real-time messaging |
+
+</details>
 
 ---
 
-## License
+## 📄 License
 
 FOSS — license to be determined before public release.
