@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.1.2 - 2026-04-22
+
+Android release workflow recovery.
+
+### Fixed
+
+- Make generated Android Gradle signing imports idempotent.
+- Write Android keystore properties without heredoc indentation risk.
+- Resolve the Android upload keystore from the generated Gradle root project.
+
 ## v0.1.1 - 2026-04-22
 
 Android signing recovery release.
