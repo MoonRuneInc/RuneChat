@@ -18,6 +18,7 @@ RuneChat TrueNAS helper
 Usage:
   ./truenas.sh init       Create .env.prod with generated secrets
   ./truenas.sh doctor     Validate Docker, env, compose, images, and local health
+  ./truenas.sh images     Build and export image tarballs; requires full repo
   ./truenas.sh load       Load runechat-app.tar and runechat-frontend.tar if present
   ./truenas.sh config     Render Docker Compose config
   ./truenas.sh up         Start self-contained deploy from pre-built images
@@ -228,6 +229,9 @@ case "$cmd" in
     ;;
   doctor)
     doctor
+    ;;
+  images)
+    ./build-truenas-images.sh
     ;;
   load)
     load_images
