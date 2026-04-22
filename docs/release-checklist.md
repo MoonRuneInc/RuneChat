@@ -45,6 +45,8 @@ git push github v0.1.0   # if GitHub mirror is manually synced
 - [ ] Android SDK/NDK setup completed.
 - [ ] `tauri android init --ci` succeeded.
 - [ ] `tauri android build --target aarch64` produced APK.
+- [ ] Android release signing secrets were present and the APK signature verification step passed.
+- [ ] No `*-unsigned.apk` artifact was uploaded or attached to the release.
 - [ ] Artifact upload step succeeded.
 
 ### 5. Verify release publication
