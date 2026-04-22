@@ -1,0 +1,65 @@
+name: Issue Platform Labels
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  apply-platform-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const platformLabels = {
+              ANDROID: 'platform: ANDROID',
+              PC: 'platform: PC',
+              WEB: 'platform: WEB',
+              IOS: 'platform: IOS',
+              MAC: 'platform: MAC',
+              LINUX: 'platform: LINUX',
+            };
+
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+            const match = body.match(/### Platform\s+([\s\S]*?)(?=\n### |\s*$)/);
+            if (!match) {
+              core.info('No Platform section found.');
+              return;
+            }
+
+            const selected = Object.keys(platformLabels).filter((platform) =>
+              new RegExp(`(^|[^A-Z])${platform}([^A-Z]|$)`).test(match[1])
+            );
+            const desiredLabels = selected.map((platform) => platformLabels[platform]);
+            const existingPlatformLabels = issue.labels
+              .map((label) => label.name)
+              .filter((name) => Object.values(platformLabels).includes(name));
+
+            const labelsToRemove = existingPlatformLabels.filter(
+              (name) => !desiredLabels.includes(name)
+            );
+            const labelsToAdd = desiredLabels.filter(
+              (name) => !existingPlatformLabels.includes(name)
+            );
+
+            for (const name of labelsToRemove) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                name,
+              });
+            }
+
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: labelsToAdd,
+              });
+            }

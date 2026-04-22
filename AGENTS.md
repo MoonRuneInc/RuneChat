@@ -68,7 +68,7 @@ Better decisions come from better information.
 **RuneChat** is a FOSS, security-first chat platform intended to become a real alternative to Discord. MVP is in progress.
 
 - **Root directory:** `/home/mystiatech/projects/cc/moonrune/RuneChat`
-- **Current state:** Rate limiting implemented and Blue Team cleared. Red Team test suite passes (49/49). Backend compiles and unit tests pass. Ready for production deployment track.
+- **Current state:** Release prep for `v0.1.0` is underway. Plan 09 TrueNAS deployment artifacts are merged to GitHub `master`; rate limiting, Red Team suite, production compose, public-deployment checklist, and backend tests are Blue Team cleared. First release tags must be watched live.
 - **Deployment target:** `chat.moonrune.cc`
 
 ## Technology Stack
@@ -82,6 +82,7 @@ Better decisions come from better information.
 | Database | PostgreSQL 16 (Docker) |
 | Real-time broker | Redis 7 (Docker) |
 | Deployment | Docker Compose |
+| Native clients | Tauri v2 (Windows, Android release workflow) |
 
 ## Project Structure
 
@@ -175,8 +176,9 @@ curl http://localhost:8080
 1. Before proposing architecture changes, check the vault canon at `/mnt/d/Vaults/OfficeVault/02_Projects/RuneChat/`.
 2. All implementation plans live in `docs/superpowers/plans/`.
 3. Heed Rhea's QA callouts — they are requirements, not suggestions.
-4. Commit atomically and push to Gitea (`origin`).
+4. Commit atomically. Push feature work through review branches unless the user explicitly approves direct release/hygiene work.
 5. Rhea-authored pushes require Rhea's git identity and a `Signed-off-by: Rhea Solis <rhea@moonrune.cc>` commit trailer.
+6. Release tags are created from a clean `master` after CI is green. Watch `.github/workflows/release.yml` live and verify attached Windows/Android artifacts before treating the release as complete.
 
 ## Known Build Warnings
 
