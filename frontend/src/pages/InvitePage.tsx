@@ -44,30 +44,30 @@ export default function InvitePage() {
             <p className="text-red-400 text-lg mb-4">{error}</p>
             <button
               onClick={() => navigate('/')}
-              className="px-6 py-2 bg-surface-700 hover:bg-surface-600 text-white rounded-lg"
+              className="px-6 py-2 bg-surface-700 hover:bg-surface-600 text-ivory rounded-lg"
             >
               Go home
             </button>
           </>
         ) : preview ? (
           <>
-            <div className="w-16 h-16 bg-accent-500 rounded-2xl flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
+            <div className="w-16 h-16 bg-accent-500 rounded-2xl flex items-center justify-center text-2xl font-bold text-ivory mx-auto mb-4">
               {preview.server_name[0]?.toUpperCase()}
             </div>
-            <h1 className="text-xl font-bold text-white mb-1">{preview.server_name}</h1>
-            <p className="text-gray-400 text-sm mb-6">
+            <h1 className="text-xl font-bold text-ivory mb-1">{preview.server_name}</h1>
+            <p className="text-ivory/60 text-sm mb-6">
               {preview.member_count} {preview.member_count === 1 ? 'member' : 'members'}
             </p>
             <button
               onClick={handleJoin}
               disabled={joining}
-              className="w-full py-2.5 bg-accent-500 hover:bg-accent-400 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
+              className="w-full py-2.5 bg-accent-500 hover:bg-accent-400 disabled:opacity-50 text-ivory font-medium rounded-lg transition-colors"
             >
               {joining ? 'Joining…' : user ? 'Join server' : 'Sign in to join'}
             </button>
           </>
         ) : (
-          <p className="text-gray-400">Loading invite…</p>
+          <p className="text-ivory/60">Loading invite…</p>
         )}
       </div>
     </div>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#081D3A"/>
+      <stop offset="100%" stop-color="#0D2447"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg)" rx="16"/>
+  <circle cx="200" cy="110" r="48" fill="none" stroke="#D4AF37" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="200" cy="110" r="36" fill="none" stroke="#D4AF37" stroke-width="1.5" opacity="0.6"/>
+  <text x="200" y="118" text-anchor="middle" font-family="Cinzel, serif" font-size="32" font-weight="700" fill="#D4AF37" letter-spacing="4">R</text>
+  <text x="200" y="195" text-anchor="middle" font-family="Lato, sans-serif" font-size="16" font-weight="300" fill="#F2EAD7" opacity="0.8" letter-spacing="6">RUNECHAT</text>
+  <line x1="160" y1="215" x2="240" y2="215" stroke="#D4AF37" stroke-width="0.5" opacity="0.4"/>
+</svg>

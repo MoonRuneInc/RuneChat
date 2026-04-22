@@ -41,7 +41,7 @@ export default function MessageInput({ channelId, channelName, disabled, disable
   if (disabled) {
     return (
       <div className="px-4 py-3 border-t border-surface-700">
-        <div className="px-4 py-3 bg-surface-700/50 rounded-lg text-sm text-gray-500 text-center">
+        <div className="px-4 py-3 bg-surface-700/50 rounded-lg text-sm text-ivory/50 text-center">
           {disabledReason ?? 'You cannot send messages here'}
         </div>
       </div>
@@ -59,7 +59,7 @@ export default function MessageInput({ channelId, channelName, disabled, disable
           placeholder={`Message #${channelName}`}
           rows={1}
           maxLength={4000}
-          className="flex-1 bg-transparent text-white placeholder-gray-500 resize-none focus:outline-none text-sm leading-6 max-h-32 overflow-y-auto"
+          className="flex-1 bg-transparent text-ivory placeholder-ivory/50 resize-none focus:outline-none text-sm leading-6 max-h-32 overflow-y-auto"
           style={{ height: 'auto' }}
           onInput={(e) => {
             const el = e.currentTarget
@@ -70,7 +70,7 @@ export default function MessageInput({ channelId, channelName, disabled, disable
         <button
           onClick={handleSend}
           disabled={!content.trim() || sending}
-          className="shrink-0 p-1.5 text-accent-400 hover:text-accent-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="shrink-0 p-1.5 text-accent-400 hover:text-gold-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           title="Send message (Enter)"
         >
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -78,7 +78,7 @@ export default function MessageInput({ channelId, channelName, disabled, disable
           </svg>
         </button>
       </div>
-      <p className="text-xs text-gray-600 mt-1 ml-1">Enter to send · Shift+Enter for new line</p>
+      <p className="text-xs text-ivory/30 mt-1 ml-1">Enter to send · Shift+Enter for new line</p>
     </div>
   )
 }

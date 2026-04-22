@@ -21,13 +21,13 @@ function MessageItem({ message }: { message: Message }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="font-medium text-white text-sm">
+          <span className="font-medium text-ivory text-sm">
             {message.author_username}
           </span>
           {message.author_status === 'compromised' && <CompromisedBadge />}
-          <span className="text-xs text-gray-500">{ts}</span>
+          <span className="text-xs text-ivory/50">{ts}</span>
         </div>
-        <p className={`text-sm leading-relaxed text-gray-200 break-words ${
+        <p className={`text-sm leading-relaxed text-ivory/90 break-words ${
           message.compromised_at_send ? 'opacity-60 italic' : ''
         }`}>
           {message.compromised_at_send && (
@@ -66,7 +66,7 @@ export default function MessageList({ messages, isLoading }: Props) {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
+      <div className="flex-1 flex items-center justify-center text-ivory/50 text-sm">
         Loading messages…
       </div>
     )
@@ -74,7 +74,7 @@ export default function MessageList({ messages, isLoading }: Props) {
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
+      <div className="flex-1 flex items-center justify-center text-ivory/50 text-sm">
         No messages yet. Say hello!
       </div>
     )

@@ -59,10 +59,10 @@ export default function ChatPage() {
         <ServerList onCreateServer={() => setShowCreateServer(true)} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-gray-400 mb-4">No servers yet. Create one to get started.</p>
+            <p className="text-ivory/60 mb-4">No servers yet. Create one to get started.</p>
             <button
               onClick={() => setShowCreateServer(true)}
-              className="px-6 py-2.5 bg-accent-500 hover:bg-accent-400 text-white rounded-lg"
+              className="px-6 py-2.5 bg-accent-500 hover:bg-accent-400 text-ivory rounded-lg"
             >
               Create server
             </button>
@@ -89,13 +89,13 @@ export default function ChatPage() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Channel header */}
           <div className="h-12 border-b border-surface-700 flex items-center px-4 gap-2 shrink-0">
-            <span className="text-gray-500">#</span>
-            <span className="font-semibold text-white">{currentChannel.display_name}</span>
+            <span className="text-ivory/50">#</span>
+            <span className="font-semibold text-ivory">{currentChannel.display_name}</span>
             <div className="flex-1" />
             {serverId && (
               <button
                 onClick={() => setShowInvite(true)}
-                className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-surface-700"
+                className="text-xs text-ivory/60 hover:text-ivory px-2 py-1 rounded hover:bg-surface-700"
               >
                 Invite
               </button>
@@ -119,7 +119,7 @@ export default function ChatPage() {
           />
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
+        <div className="flex-1 flex items-center justify-center text-ivory/50 text-sm">
           {channels.length === 0 ? 'No channels yet — create one!' : 'Select a channel'}
         </div>
       )}

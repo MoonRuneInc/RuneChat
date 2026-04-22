@@ -33,10 +33,10 @@ export default function ServerCreateModal({ onClose }: Props) {
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-surface-800 rounded-xl p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-semibold text-white mb-4">Create a server</h2>
+        <h2 className="text-lg font-semibold text-ivory mb-4">Create a server</h2>
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Server name</label>
+            <label className="block text-sm text-ivory/80 mb-1">Server name</label>
             <input
               autoFocus
               type="text"
@@ -44,19 +44,19 @@ export default function ServerCreateModal({ onClose }: Props) {
               onChange={(e) => setName(e.target.value)}
               required
               maxLength={100}
-              className="w-full px-4 py-2.5 bg-surface-700 border border-surface-600 rounded-lg text-white focus:outline-none focus:border-accent-500"
+              className="w-full px-4 py-2.5 bg-surface-700 border border-surface-600 rounded-lg text-ivory focus:outline-none focus:border-accent-500"
               placeholder="My awesome server"
             />
           </div>
           {error && <p className="text-red-400 text-sm">{error}</p>}
           <div className="flex gap-3 justify-end">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-400 hover:text-white text-sm">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-ivory/60 hover:text-ivory text-sm">
               Cancel
             </button>
             <button
               type="submit"
               disabled={!name.trim() || loading}
-              className="px-4 py-2 bg-accent-500 hover:bg-accent-400 disabled:opacity-50 text-white rounded-lg text-sm"
+              className="px-4 py-2 bg-accent-500 hover:bg-accent-400 disabled:opacity-50 text-ivory rounded-lg text-sm"
             >
               {loading ? 'Creating…' : 'Create'}
             </button>

@@ -35,7 +35,7 @@ function AppRouter() {
   if (!bootstrapped) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface-900">
-        <div className="text-gray-400 text-sm">Loading…</div>
+        <div className="text-ivory/60 text-sm">Loading…</div>
       </div>
     )
   }

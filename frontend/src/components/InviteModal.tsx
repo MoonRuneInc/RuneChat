@@ -37,8 +37,8 @@ export default function InviteModal({ serverId, onClose }: Props) {
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-surface-800 rounded-xl p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-semibold text-white mb-2">Invite people</h2>
-        <p className="text-sm text-gray-400 mb-4">Share a link to let others join this server.</p>
+        <h2 className="text-lg font-semibold text-ivory mb-2">Invite people</h2>
+        <p className="text-sm text-ivory/60 mb-4">Share a link to let others join this server.</p>
 
         {!code ? (
           <>
@@ -46,7 +46,7 @@ export default function InviteModal({ serverId, onClose }: Props) {
             <button
               onClick={handleGenerate}
               disabled={loading}
-              className="w-full py-2.5 bg-accent-500 hover:bg-accent-400 disabled:opacity-50 text-white rounded-lg text-sm"
+              className="w-full py-2.5 bg-accent-500 hover:bg-accent-400 disabled:opacity-50 text-ivory rounded-lg text-sm"
             >
               {loading ? 'Generating…' : 'Generate invite link'}
             </button>
@@ -57,20 +57,20 @@ export default function InviteModal({ serverId, onClose }: Props) {
               <input
                 readOnly
                 value={inviteLink!}
-                className="flex-1 px-3 py-2 bg-surface-700 text-gray-200 rounded-lg text-sm focus:outline-none"
+                className="flex-1 px-3 py-2 bg-surface-700 text-ivory/90 rounded-lg text-sm focus:outline-none"
               />
               <button
                 onClick={handleCopy}
-                className="px-3 py-2 bg-accent-500 hover:bg-accent-400 text-white rounded-lg text-sm shrink-0"
+                className="px-3 py-2 bg-accent-500 hover:bg-accent-400 text-ivory rounded-lg text-sm shrink-0"
               >
                 {copied ? 'Copied!' : 'Copy'}
               </button>
             </div>
-            <p className="text-xs text-gray-500">Link expires never · Unlimited uses by default</p>
+            <p className="text-xs text-ivory/50">Link expires never · Unlimited uses by default</p>
           </div>
         )}
 
-        <button type="button" onClick={onClose} className="w-full mt-3 py-2 text-gray-400 hover:text-white text-sm">
+        <button type="button" onClick={onClose} className="w-full mt-3 py-2 text-ivory/60 hover:text-ivory text-sm">
           Close
         </button>
       </div>
