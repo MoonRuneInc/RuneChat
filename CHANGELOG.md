@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.1.1 - 2026-04-22
+
+Android signing recovery release.
+
+### Fixed
+
+- Removed the unsigned Android APK failure path from the release workflow.
+- Require Android signing secrets before publishing Android release artifacts.
+- Verify Android APK signatures before upload.
+- Exclude `*-unsigned.apk` files from release artifacts.
+
+### Notes
+
+- `v0.1.0` remains Windows-only after the invalid unsigned Android APK was removed from the GitHub release.
+
 ## v0.1.0 - 2026-04-22
 
 First watched RuneChat release candidate.
