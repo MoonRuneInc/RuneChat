@@ -4,8 +4,8 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 
-APP_IMAGE=${CAULDRON_APP_IMAGE:-"cauldron-app:latest"}
-FRONTEND_IMAGE=${CAULDRON_FRONTEND_IMAGE:-"cauldron-frontend:latest"}
+APP_IMAGE=${RUNECHAT_APP_IMAGE:-"runechat-app:latest"}
+FRONTEND_IMAGE=${RUNECHAT_FRONTEND_IMAGE:-"runechat-frontend:latest"}
 OUT_DIR=${OUT_DIR:-"$SCRIPT_DIR"}
 
 usage() {

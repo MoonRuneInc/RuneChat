@@ -229,6 +229,9 @@ case "$cmd" in
   doctor)
     doctor
     ;;
+  images)
+    ./build-truenas-images.sh
+    ;;
   load)
     load_images
     ;;
