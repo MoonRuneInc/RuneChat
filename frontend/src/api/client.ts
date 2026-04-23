@@ -148,3 +148,15 @@ export const invitesApi = {
       body: JSON.stringify({ server_id: serverId, max_uses: maxUses, expires_in_hours: expiresInHours }),
     }),
 }
+
+// --- Members ---
+export interface Member {
+  user_id: string
+  username: string
+  role: string
+  joined_at: string
+}
+
+export const membersApi = {
+  list: (serverId: string) => request<Member[]>(`/servers/${serverId}/members`),
+}
