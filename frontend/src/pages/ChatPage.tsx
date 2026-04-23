@@ -12,6 +12,7 @@ import CompromisedBanner from '../components/CompromisedBanner'
 import ServerCreateModal from '../components/ServerCreateModal'
 import InviteModal from '../components/InviteModal'
 import ChannelCreateModal from '../components/ChannelCreateModal'
+import MemberList from '../components/MemberList'
 
 export default function ChatPage() {
   const { serverId, channelId } = useParams<{ serverId?: string; channelId?: string }>()
@@ -123,6 +124,8 @@ export default function ChatPage() {
           {channels.length === 0 ? 'No channels yet — create one!' : 'Select a channel'}
         </div>
       )}
+
+      {serverId && <MemberList serverId={serverId} />}
 
       {showCreateServer && <ServerCreateModal onClose={() => setShowCreateServer(false)} />}
       {showCreateChannel && serverId && (
